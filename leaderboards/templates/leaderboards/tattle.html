@@ -1,0 +1,33 @@
+{% extends 'leaderboards/base.html' %}
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-EQG3BMRF63"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+    
+      gtag('config', 'G-EQG3BMRF63');
+    </script>
+{% block content %}
+    <h1>Tattle Page</h1>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Badlist Timestamp</th>
+                <th>Playfab ID</th>
+                <th>Common Alias</th>
+                <th>Badlist Reason</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for player in players|dictsort:'badlist_timestamp' %}
+                <tr>
+                    <td>{{ player.badlist_timestamp }}</td>
+                    <td><a href="{% url 'leaderboards:player_profile' player.playfabid %}">{{ player.playfabid }}</a></td>
+                    <td>{{ player.most_common_alias }}</td>
+                    <td>{{ player.badlist_reason }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

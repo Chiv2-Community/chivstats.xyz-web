@@ -1,0 +1,26 @@
+{% extends 'leaderboards/base.html' %}
+
+{% block content %}
+<h1>Top Players by Average Playtime</h1>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Rank</th>
+            <th>Playfab ID</th>
+            <th>Common Alias</th>
+            <th>Average Playtime</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for player in players %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ player.playfabid }}</td>
+                <td>{{ player.most_common_alias }}</td>
+                <td>{{ player.average_playtime }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

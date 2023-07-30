@@ -1,0 +1,103 @@
+{% extends 'leaderboards/base.html' %}
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-EQG3BMRF63"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-EQG3BMRF63');
+</script>
+
+{% block sidebar %}
+<li class="nav-item">
+    <span class="nav-link font-weight-bold">Leaderboards</span>
+</li>
+{% for name in leaderboards.items %}
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'leaderboards:leaderboard' name.0 %}">{{ name.1 }}</a>
+    </li>
+{% endfor %}
+{% endblock %}
+
+{% block content %}
+<h1>{{ leaderboard_name }}</h1>
+<br>
+<p>Latest update: {{ latest_update|date:"F j, Y, P T" }}</p>
+<br>
+
+<!-- Search form -->
+<form method="GET" action="{% url 'leaderboards:leaderboard' leaderboard_name %}">
+    <div class="input-group mb-3">
+        <input type="text" class="form-control custom-input" name="search_query" placeholder="Enter player name" value="{{ search_query }}">
+        <div class="input-group-append">
+            <button class="btn btn-outline-primary" type="submit">Search</button>
+        </div>
+    </div>
+</form>
+
+<br>
+{% if search_query and player_position %}
+    <p>Your position: {{ player_position }}</p>
+{% endif %}
+<br>
+
+<!-- Pagination at the top -->
+<div class="d-flex justify-content-center">
+    {% if page_obj.has_previous %}
+        <a class="btn btn-outline-info" href="?page=1">First</a>
+        <a class="btn btn-outline-info" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+    {% endif %}
+    <span class="current-page d-inline-block h-100 pl-4 text-secondary"> Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+        <a class="btn btn-outline-info" href="?page={{ page_obj.next_page_number }}">Next</a>
+        <a class="btn btn-outline-info" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+    {% endif %}
+</div>
+
+<table class="table table-striped" id="leaderboardTable">
+    <thead>
+        <tr>
+            <th>Position</th>
+            <th>Display Name</th>
+            <th>Stat Value</th>
+            <th>Player ID</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for entry in page_obj %}
+            <tr>
+                <td>
+                    {% if search_query and player_position %}
+                        {% if entry.rank == player_position %}
+                            {{ player_position }}
+                        {% else %}
+                            {{ forloop.counter|add:page_obj.start_index|add:"-1" }}
+                        {% endif %}
+                    {% else %}
+                        {{ forloop.counter|add:page_obj.start_index|add:"-1" }}
+                    {% endif %}
+                </td>
+                <td class="displayName">{{ entry.playfabid.most_common_alias }}</td>
+                <td>{{ entry.stat_value }}</td>
+                <td>
+                    <a href="{% url 'leaderboards:player_profile' entry.playfabid.playfabid %}">{{ entry.playfabid.playfabid }}</a>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- Pagination at the bottom -->
+<div class="d-flex justify-content-center">
+    {% if page_obj.has_previous %}
+        <a class="btn btn-outline-info" href="?page=1">First</a>
+        <a class="btn btn-outline-info" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+    {% endif %}
+    <span class="current-page d-inline-block h-100 pl-4 text-secondary"> Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+        <a class="btn btn-outline-info" href="?page={{ page_obj.next_page_number }}">Next</a>
+        <a class="btn btn-outline-info" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+    {% endif %}
+</div>
+{% endblock %}

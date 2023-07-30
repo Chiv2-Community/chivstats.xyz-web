@@ -1,0 +1,57 @@
+{% extends 'leaderboards/base.html' %}
+{% load custom_filters %}
+{% block content %}
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-EQG3BMRF63"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+    
+      gtag('config', 'G-EQG3BMRF63');
+    </script>
+
+<div class="text-start"><br><br>
+    <h1>Chivstats.xyz Chivalry 2 Statistics & Leaderboards</h1>
+    <p>
+        <br>
+        Chivalry 2 Unique Players: {{ latest_entry.unique_players|format_with_commas }}<br>
+        Recent Daily unique player count: {{ latest_entry.daily_players|format_with_commas }}<br>                  
+        <br>
+        This site presents player statistics derived from official Chivalry 2 server sources. The gathering process is
+        time-consuming and updates are done in batches. Please note that the available data is limited and certain
+        restrictions apply. At present, updates are <b>~daily</b> targeted at <b>100,000</b> top players..
+        <br><br>
+        Assistance with the web frontend and the creation of an aesthetically pleasing UI would be appreciated. If you
+        or someone you know possesses the required skills, please reach out.
+        <br><br>
+        - Gimmic
+        <br><br><br>
+    </p>
+
+    <h2 class="mb-3">Changelog</h2>
+    <ul class="list-group">
+        <li class="list-group-item">2023-06-11 Improvements to player search, player profiles, daily sumstats, and other associated logic(data indexing, storage, caching). </li>
+        <li class="list-group-item">2023-06-10 Basic player search functionality re-implemented. </li>
+        <li class="list-group-item">2023-06-09 Polling process updated to backend. Updates hourly again. Some filtering added on the backend. </li>
+        <li class="list-group-item">2023-06-07 Rough working concept online. Polish soon. Automatically updating data soon.</li>
+        <li class="list-group-item">2023-06-02 <a href="https://discord.gg/8Wg76FaNvm">'C2DM - Chivalry 2 Data Mining' Discord</a> in partnership w/ Polehammer.net folks.</li>
+        <li class="list-group-item">2023-05-28 Moved from nosql backend to a relational db. 6.2 M unique players, 200M leaderboard rows.</li>
+        <li class="list-group-item">2023-05-28 Pivoted to new format. Fixed some things, broke some things. cleanup next.</li>
+        <li class="list-group-item">2023-05-26 Added https/tls, added development mode for maintenance windows..</li>
+        <li class="list-group-item">2023-05-25 improved pagination, added player search to leaderboards.</li>
+        <li class="list-group-item">2023-05-25 added pagination and improved display.</li>
+        <li class="list-group-item">2023-05-25 added caching and player search.</li>
+        <li class="list-group-item">2023-04-15 Initial creation, gathering, parsing of stats.</li>
+        <!-- Add more list items as you have more updates -->
+    </ul>
+    <br><br>
+    Todo: <br>
+    - theme/styling/graphics.<br>
+    - improved search features.<br>
+    - histogram/changes-over-time.<br>
+    - Top N multiview leaderboards.<br>
+    - Datapoint/serial browser.<br>
+</div>
+{% endblock %}
+

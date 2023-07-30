@@ -1,0 +1,38 @@
+{% extends 'leaderboards/base.html' %}
+{% block sidebar %}
+<li class="nav-item">
+    <span class="nav-link font-weight-bold">Leaderboards</span>
+</li>
+{% for name in leaderboards.items %}
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'leaderboards:leaderboard' name.0 %}">{{ name.1 }}</a>
+    </li>
+{% endfor %}
+{% endblock %}
+{% block content %}
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-EQG3BMRF63"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+    
+      gtag('config', 'G-EQG3BMRF63');
+    </script>
+  <h1>Player Search</h1><br>
+  Search the known players data for a player name. This query may take a little while, be patient.<br>
+  Click on the player's ID to view their profile.<br><br>Three character minimum.<br>
+  <form method="GET" action="{% url 'leaderboards:player_search' %}">
+    <input type="text" name="search_query" placeholder="Enter player name">
+    <button type="submit">Search</button>
+  </form>
+
+  {% if players %}
+    <h2>Search Results</h2>
+    {% for player in players %}
+      <p><a href="{% url 'leaderboards:player_profile' player.playfabid %}">{{ player.playfabid }}</a> - {{ player.name }}</p>
+    {% endfor %}
+  {% else %}
+    <p>No players found.</p>
+  {% endif %}
+{% endblock %}

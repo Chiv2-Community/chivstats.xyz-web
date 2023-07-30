@@ -1,0 +1,18 @@
+<h1>{{ collection_name }} Player Count Over Time</h1>
+<table>
+    <thead>
+        <tr>
+            <th>Serial</th>
+            <th>Player Count</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for entry in player_count_list %}
+        <tr>
+            <td>{{ entry.serial }}</td>
+            <td>{{ entry.max_position }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+

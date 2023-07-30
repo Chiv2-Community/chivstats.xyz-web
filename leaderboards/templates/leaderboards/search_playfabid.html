@@ -1,0 +1,55 @@
+{% extends 'leaderboards/base.html' %}
+
+{% block sidebar %}
+<li class="nav-item">
+    <span class="nav-link font-weight-bold">Leaderboards</span>
+</li>
+{% for leaderboard_name in leaderboards %}
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'leaderboards:leaderboard' leaderboard_name %}">{{ leaderboard_name }}</a>
+    </li>
+{% endfor %}
+{% endblock %}
+{% block content %}
+  <h1>Search Player ID</h1>
+  <br><br><br>
+  <form method="get" action="{% url 'leaderboards:search_playfabid' %}">
+    <label for="search_query">Player ID:</label>
+    <input type="text" name="search_query" value="{{ search_query }}" required>
+    <button type="submit">Search</button>
+  </form>
+
+  {% if search_query %}
+    <h2>Results for: {{ search_query }}</h2>
+
+    {% if playfab_data %}
+    <table class="table table-striped search-results">
+        <thead>
+          <tr>
+            <th>Collection</th>
+            <th>Position</th>
+            <th>Display Name</th>
+            <th>Stat Value</th>
+            <th>Player ID</th>
+            <th>Total Stat Count</th> <!-- Added header -->
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in playfab_data %}
+            <tr>
+              <td>{{ entry.collection_name }}</td>
+              <td>{{ entry.position|add:1 }}</td>
+              <td>{{ entry.display_name }}</td>
+              <td>{{ entry.stat_value }}</td>
+              <td>{{ entry.playfab_id }}</td>
+              <td>{{ entry.total_count }}</td> <!-- Added cell -->
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>No results found.</p>
+    {% endif %}
+  {% endif %}
+{% endblock %}
+

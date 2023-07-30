@@ -1,0 +1,130 @@
+{% extends 'leaderboards/base.html' %}
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-EQG3BMRF63"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+    
+      gtag('config', 'G-EQG3BMRF63');
+    </script>
+{% block content %}
+<h1>Player Profile</h1>
+<br>
+<p><strong>Playfab ID:</strong> {{ player.playfabid }}</p>
+<p><strong>Common Alias:</strong> {{ player.most_common_alias }}</p>
+<p><strong>Last Seen Playing:</strong> {{ last_seen_serial|date:"F j, Y" }}</p>
+<br>
+<p><strong>Alias History:</strong></p>
+<ul>
+    {% for alias in aliases %}
+        <li>{{ alias }}</li>
+    {% endfor %}
+</ul>
+<br>
+<table class="table table-striped table-sm">
+    <thead>
+        <tr>
+            <th>Leaderboards</th>
+            <th>Rank</th>
+            <th>Value</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for entry in leaderboard_data|dictsort:'rank' %}
+            <tr>
+                <td>{{ entry.title }}</td>
+                <td>{% if entry.rank %}{{ entry.rank }}{% else %}N/A{% endif %}</td>
+                <td>{% if entry.rank %}{{ entry.stat_value }}{% else %}-{% endif %}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>Playtime History</h2>
+<table class="table table-striped table-sm">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Playtime</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for entry in playtime_data %}
+            <tr>
+                <td>{{ entry.date }}</td>
+                <td>{{ entry.playtime }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<br>
+<h2>Playtime History</h2>
+<canvas id="playtimeChart" style="max-width: 300px; max-height: 200px;"></canvas>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Get the playtime data from Django context
+    var playtimeData = [
+        {% for entry in playtime_data %}
+            { date: "{{ entry.date }}", playtime: {{ entry.playtime }} },
+        {% endfor %}
+    ];
+
+    // Extract the dates and playtimes into separate arrays
+    var dates = playtimeData.map(function(entry) {
+        return entry.date;
+    });
+
+    var playtimes = playtimeData.map(function(entry) {
+        return entry.playtime;
+    });
+
+    // Create a bar chart using Chart.js
+    var ctx = document.getElementById('playtimeChart').getContext('2d');
+    new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: dates,
+        datasets: [{
+            label: 'Playtime',
+            data: playtimes,
+            backgroundColor: 'rgba(75, 192, 192, 0.6)',
+            borderColor: 'rgba(75, 192, 192, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true, // Add this line
+        scales: {
+            x: {
+                grid: {
+                    display: false
+                }
+            },
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    precision: 0
+                },
+                maxTicksLimit: 5
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        layout: {
+            padding: {
+                top: 10,
+                right: 10,
+                bottom: 10,
+                left: 10
+            }
+        }
+    }
+});
+</script>
+
+{% endblock %}

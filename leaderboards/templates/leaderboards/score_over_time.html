@@ -1,0 +1,43 @@
+{% extends 'leaderboards/base.html' %}
+{% block content %}
+<h1>{{ collection_name }}</h1>
+<p>Score Over Time</p>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<canvas id="scoreOverTimeChart"></canvas>
+<script>
+    var ctx = document.getElementById('scoreOverTimeChart').getContext('2d');
+    var scores_over_time_str = '{{ scores|escapejs }}';
+    var scores_over_time = JSON.parse(scores_over_time_str);
+    var datasets = [];
+
+    scores_over_time.forEach(function(serialObject) {
+        var serialNumber = serialObject.serialNumber;
+        var topScores = serialObject.topScores;
+        var data = topScores.map(function(score) { return score.stat_value; });
+
+        // push each dataset
+        datasets.push({
+            label: serialNumber,
+            data: data,
+            fill: false,
+            borderColor: '#' + Math.floor(Math.random()*16777215).toString(16) // random color for each line
+        });
+    });
+
+    // labels are the serial numbers / timestamps
+    var labels = scores_over_time.map(function(score) { return score.serialNumber; });
+
+    // create a single chart with all datasets
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels, 
+            datasets: datasets
+        },
+    });
+</script>
+
+
+{% endblock %}
+

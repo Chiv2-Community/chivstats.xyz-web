@@ -1,0 +1,23 @@
+{% extends 'leaderboards/base.html' %}
+
+{% block content %}
+  <h2>{{ collection_name }} - Serials</h2>
+  
+  <table>
+    <thead>
+      <tr>
+        <th>Serial</th>
+        <th>Total Stat Count</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entry in serials %}
+        <tr>
+          <td>{{ entry.serial }}</td>
+          <td>{{ entry.count }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}
+

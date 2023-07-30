@@ -1,0 +1,51 @@
+
+loaded..
+  <div id="graph"></div>
+
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script>
+    var data = {{ data|safe }};
+data = [
+{ "_id" : ObjectId("6440ca2445f2d9ef661bb50c"), "PlayFabId" : "5D2F62ABA38DC8AF", "DisplayName" : "gimmic", "StatValue" : 598910, "Position" : 10266, "Timestamp" : "2023-04-20T00:14:00.258726", "serial" : "202304192341" },
+{ "_id" : ObjectId("644219aa24b64dabe157773c"), "PlayFabId" : "5D2F62ABA38DC8AF", "DisplayName" : "gimmic", "StatValue" : 599224, "Position" : 10278, "Timestamp" : "2023-04-21T00:05:00.373710", "serial" : "202304202333" },
+{ "_id" : ObjectId("6442bb81abd5e1b7a34dfa6f"), "PlayFabId" : "5D2F62ABA38DC8AF", "DisplayName" : "gimmic", "StatValue" : 599224, "Position" : 10289, "Timestamp" : "2023-04-21T11:36:00.193415", "serial" : "202304211136" },
+{ "_id" : ObjectId("6442c5137ff267e33fd42395"), "PlayFabId" : "5D2F62ABA38DC8AF", "DisplayName" : "gimmic", "StatValue" : 599224, "Position" : 10289, "Timestamp" : "2023-04-21T12:17:00.186586", "serial" : "202304211216" },
+{ "_id" : ObjectId("6442ce2e78fa9482bc14e8e8"), "PlayFabId" : "5D2F62ABA38DC8AF", "DisplayName" : "gimmic", "StatValue" : 599224, "Position" : 10292, "Timestamp" : "2023-04-21T12:55:00.093107", "serial" : "202304211255" },
+{ "_id" : ObjectId("6442cf208401564a8d5d9289"), "PlayFabId" : "5D2F62ABA38DC8AF", "DisplayName" : "gimmic", "StatValue" : 599224, "Position" : 10292, "Timestamp" : "2023-04-21T13:00:00.211838", "serial" : "202304211259" },
+{ "_id" : ObjectId("6442cf78b509dc1b624a8b5d"), "PlayFabId" : "5D2F62ABA38DC8AF", "DisplayName" : "gimmic", "StatValue" : 599224, "Position" : 10292, "Timestamp" : "2023-04-21T13:01:00.072261", "serial" : "202304211300" },
+{ "_id" : ObjectId("6442e307d8e821e9698dbb58"), "PlayFabId" : "5D2F62ABA38DC8AF", "DisplayName" : "gimmic", "StatValue" : 599224, "Position" : 10293, "Timestamp" : "2023-04-21T14:24:00.470409", "serial" : "202304211424" },
+{ "_id" : ObjectId("64430e645272a1d15ba4c2c4"), "PlayFabId" : "5D2F62ABA38DC8AF", "DisplayName" : "gimmic", "StatValue" : 599224, "Position" : 10297, "Timestamp" : "2023-04-21T17:29:00.607028", "serial" : "202304211718" },
+{ "_id" : ObjectId("6443716f229e8625407526e7"), "PlayFabId" : "5D2F62ABA38DC8AF", "DisplayName" : "gimmic", "StatValue" : 600315, "Position" : 10281, "Timestamp" : "2023-04-22T00:32:00.657857", "serial" : "202304220032" },
+{ "_id" : ObjectId("644412a48e90f7847504f40e"), "PlayFabId" : "5D2F62ABA38DC8AF", "DisplayName" : "gimmic", "StatValue" : 600315, "Position" : 10296, "Timestamp" : "2023-04-22T12:00:00.955244", "serial" : "202304221200" },
+{ "_id" : ObjectId("64444ae95651118380bcacde"), "PlayFabId" : "5D2F62ABA38DC8AF", "DisplayName" : "gimmic", "StatValue" : 600315, "Position" : 10299, "Timestamp" : "2023-04-22T16:00:00.168303", "serial" : "202304221600" },
+{ "_id" : ObjectId("64448325fb2dac086097dd89"), "PlayFabId" : "5D2F62ABA38DC8AF", "DisplayName" : "gimmic", "StatValue" : 600315, "Position" : 10305, "Timestamp" : "2023-04-22T20:00:00.681091", "serial" : "202304222000" },
+{ "_id" : ObjectId("6444a82e21c99d2ae21860a4"), "PlayFabId" : "5D2F62ABA38DC8AF", "DisplayName" : "gimmic", "StatValue" : 600315, "Position" : 10308, "Timestamp" : "2023-04-22T22:38:00.657207", "serial" : "202304222226" },
+{ "_id" : ObjectId("644682e1504ae758f92190f8"), "PlayFabId" : "5D2F62ABA38DC8AF", "DisplayName" : "gimmic", "StatValue" : 604093, "Position" : 10218, "Timestamp" : "2023-04-24T08:23:00.430656", "serial" : "202304240811" },
+{ "_id" : ObjectId("644716cc31804ec4aee1c5a1"), "PlayFabId" : "5D2F62ABA38DC8AF", "DisplayName" : "gimmic", "StatValue" : 604093, "Position" : 10226, "Timestamp" : "2023-04-24T18:54:00.642740", "serial" : "202304241854" },
+{ "_id" : ObjectId("644743998c4687a56193635d"), "PlayFabId" : "5D2F62ABA38DC8AF", "DisplayName" : "gimmic", "StatValue" : 604721, "Position" : 10211, "Timestamp" : "2023-04-24T22:06:00.190768", "serial" : "202304242205" },
+{ "_id" : ObjectId("64483129ba1a09f9bd61d070"), "PlayFabId" : "5D2F62ABA38DC8AF", "DisplayName" : "gimmic", "StatValue" : 606047, "Position" : 10191, "Timestamp" : "2023-04-25T14:59:00.183455", "serial" : "202304251459" }
+];
+
+var x = [];
+    var y = [];
+    for (var i=0; i<data.length; i++) {
+      x.push(data[i][0]);
+      y.push(data[i][1]);
+    }
+    var trace = {
+      x: x,
+      y: y,
+      type: 'scatter'
+    };
+    var layout = {
+      title: 'Change in StatValue over Time',
+      xaxis: {
+        title: 'Timestamp'
+      },
+      yaxis: {
+        title: 'StatValue'
+      }
+    };
+    Plotly.newPlot('graph', [trace], layout);
+  </script>
+
