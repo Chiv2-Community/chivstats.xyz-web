@@ -8,6 +8,8 @@ The ChivStats.xyz web application serves as a user-friendly interface to access 
 
 ## Structure
 
+A sample of the backend data can be found here: [Sample DB data 500K rows](https://chivstats.xyz/static/samplechivstats.zip)
+
 ### Main Components
 
 - **chivstats**: The main configuration for the Django web application.
