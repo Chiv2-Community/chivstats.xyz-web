@@ -105,13 +105,19 @@ def url_to_leaderboard_name(url):
 
 LEADERBOARDS_DICT = {leaderboard_name_to_url(name): name for name in LEADERBOARDS}
 
+from datetime import datetime
+
 def index(request):
     latest_entry = ChivstatsSumstats.objects.latest('serial_date')
+    latest_update = datetime.strptime(str(latest_entry.serial_date), '%Y%m%d')
+
     context = {
         'leaderboards': {name: humanize_leaderboard_name(name) for name in LEADERBOARDS},
         'latest_entry': latest_entry,
+        'latest_update': latest_update,  # Pass the datetime object
     }
     return render(request, 'leaderboards/index.html', context)
+
 
 def leaderboard(request, leaderboard_name):
     leaderboard_name = leaderboard_name.replace(' ', '')  # Remove the space

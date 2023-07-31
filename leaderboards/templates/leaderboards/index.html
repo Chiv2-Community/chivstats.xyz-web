@@ -15,6 +15,7 @@
     <h1>Chivstats.xyz Chivalry 2 Statistics & Leaderboards</h1>
     <p>
         <br>
+        Most Recent Update: {{ latest_update|date:"F j, Y" }}<br><br>
         Chivalry 2 Unique Players: {{ latest_entry.unique_players|format_with_commas }}<br>
         Recent Daily unique player count: {{ latest_entry.daily_players|format_with_commas }}<br>                  
         <br>
