@@ -11,6 +11,7 @@
 {% block content %}
 <h1>Player Profile</h1>
 <br>
+<p>This is the player profile page. It is a raw view into the associated stats for a specific player. Please note that leaderboard rank values may not be correct, as the raw value is displayed here, not the corrected leaderboard rank.</p>
 <p><strong>Playfab ID:</strong> {{ player.playfabid }}</p>
 <p><strong>Common Alias:</strong> {{ player.most_common_alias }}</p>
 <p><strong>Last Seen Playing:</strong> {{ last_seen_serial|date:"F j, Y" }}</p>

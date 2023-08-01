@@ -14,7 +14,7 @@ class Player(models.Model):
     badlist = models.BooleanField(default=False)
     badlist_reason = models.CharField(max_length=255, blank=True, null=True)
     badlist_timestamp = models.DateTimeField(blank=True, null=True)
-    lastseen_serial = models.DateTimeField(blank=True, null=True)  # Add the lastseen_serial field
+    lastseen_serial = models.IntegerField()
     
     def aliases(self):
         if self.alias_history:

@@ -25,6 +25,12 @@
 <p>Latest update: {{ latest_update|date:"F j, Y, P T" }}</p>
 <br>
 
+<form method="get" action="">
+    <label for="recent_players">Show only recent players(Since 2.8 Patch on 2023/5/18):</label>
+    <input type="checkbox" id="recent_players" name="recent_players" {% if show_recent_players %}checked{% endif %}>
+    <input type="submit" value="Update">
+</form>
+
 <!-- Search form -->
 <form method="GET" action="{% url 'leaderboards:leaderboard' leaderboard_name %}">
     <div class="input-group mb-3">

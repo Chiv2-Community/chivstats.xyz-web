@@ -107,6 +107,8 @@ LEADERBOARDS_DICT = {leaderboard_name_to_url(name): name for name in LEADERBOARD
 
 from datetime import datetime
 
+from django.db.models import Max
+
 def index(request):
     latest_entry = ChivstatsSumstats.objects.latest('serial_date')
     latest_update = datetime.strptime(str(latest_entry.serial_date), '%Y%m%d')
@@ -118,12 +120,14 @@ def index(request):
     }
     return render(request, 'leaderboards/index.html', context)
 
-
 def leaderboard(request, leaderboard_name):
     leaderboard_name = leaderboard_name.replace(' ', '')  # Remove the space
     search_query = request.GET.get('search_query', '')
     page_number = request.GET.get('page', 1)
     results_per_page = request.GET.get('results_per_page', 50)
+    show_recent_players = request.GET.get('recent_players') == 'on'
+    hard_coded_date = 20230518
+
     try:
         page_number = int(page_number)
     except ValueError:
@@ -132,9 +136,30 @@ def leaderboard(request, leaderboard_name):
         results_per_page = int(results_per_page)
     except ValueError:
         results_per_page = 50
+
     if leaderboard_name not in LEADERBOARDS:
         raise Http404("Leaderboard does not exist")
-    leaderboard_data, page_obj, latest_update = get_leaderboard_data(leaderboard_name, page_number, results_per_page, search_query)
+
+    latest_serial_number = LatestLeaderboard.objects.get(leaderboard_name=leaderboard_name).serialnumber
+    players_with_badlist = Player.objects.filter(badlist=True).values_list('playfabid', flat=True)
+    leaderboard_model = apps.get_model(app_label='leaderboards', model_name=leaderboard_name)
+    leaderboard_data_query = leaderboard_model.objects.filter(serialnumber=latest_serial_number).select_related('playfabid').exclude(playfabid__in=players_with_badlist).order_by('-stat_value')
+
+    if show_recent_players:
+        leaderboard_data_query = leaderboard_data_query.filter(playfabid__lastseen_serial__gt=hard_coded_date)
+
+    if search_query:
+        leaderboard_data_query = leaderboard_data_query.filter(playfabid__alias_history__icontains=search_query)
+
+    paginator = Paginator(leaderboard_data_query, results_per_page)
+    page_obj = paginator.get_page(page_number)
+    latest_update = datetime.strptime(str(latest_serial_number), "%Y%m%d%H%M")
+    leaderboard_data = [{'player': entry.playfabid.playfabid,
+                         'alias': entry.playfabid.most_common_alias(),
+                         'value': entry.stat_value,
+                         'rank': i + 1 + ((page_obj.number - 1) * results_per_page)}
+                        for i, entry in enumerate(page_obj)]
+
     context = {
         'leaderboard_data': leaderboard_data,
         'page_obj': page_obj,
@@ -142,8 +167,11 @@ def leaderboard(request, leaderboard_name):
         'latest_update': latest_update,
         'leaderboards': {name: humanize_leaderboard_name(name) for name in LEADERBOARDS},
         'search_query': search_query,
+        'show_recent_players': show_recent_players,
     }
     return render(request, 'leaderboards/leaderboard.html', context)
+
+
 
 def get_leaderboard_data(leaderboard_name, page_number, results_per_page=50, search_query=''):
     if leaderboard_name not in LEADERBOARDS:
