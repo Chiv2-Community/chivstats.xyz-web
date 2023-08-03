@@ -76,6 +76,7 @@ def test(request):
 
 def player_search(request):
     search_query = request.GET.get('search_query', '')
+    search_query = search_query.strip()
     if search_query:
         players = Player.objects.filter(alias_history__icontains=search_query)
         players = [{'playfabid': player.playfabid, 'name': player.most_common_alias()} for player in players]
