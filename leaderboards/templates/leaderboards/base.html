@@ -89,9 +89,9 @@
 <li class="nav-item">
     <span class="nav-link font-weight-bold">Leaderboards</span>
 </li>
-{% for name in leaderboards.items %}
+{% for item in leaderboards %}
     <li class="nav-item">
-        <a class="nav-link" href="{% url 'leaderboards:leaderboard' name.0 %}">{{ name.1 }}</a>
+        <a class="nav-link" href="{% url 'leaderboards:leaderboard' item.url %}">{{ item.leaderboard }}</a>
     </li>
 {% endfor %}
 

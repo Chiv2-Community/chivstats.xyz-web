@@ -75,7 +75,7 @@ leaderboard_classes = [
 from rest_framework import serializers
 
 model_classes = {}
-
+#TODO:use one table and reorganize and/or take a deeper look at schema
 for class_name in leaderboard_classes:
     table_name = class_name.lower()
     meta_class = type('Meta', (), {'db_table': table_name})
