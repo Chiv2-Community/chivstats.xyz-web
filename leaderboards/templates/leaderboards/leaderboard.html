@@ -8,16 +8,6 @@
     
       gtag('config', 'G-EQG3BMRF63');
     </script>
-{% block sidebar %}
-<li class="nav-item">
-    <span class="nav-link font-weight-bold">Leaderboards</span>
-</li>
-{% for name in leaderboards.items %}
-    <li class="nav-item">
-        <a class="nav-link" href="{% url 'leaderboards:leaderboard' name.0 %}">{{ name.1 }}</a>
-    </li>
-{% endfor %}
-{% endblock %}
 
 {% block content %}
 <h1>{{ leaderboard_name }}</h1>
