@@ -16,6 +16,7 @@ from .serializers import (LatestLeaderboardSerializer, LeaderboardSerializer, Pl
 #import the leaderboard List since it should be defined just in one place
 from .models import (leaderboard_classes, Player, LatestLeaderboard, ChivstatsSumstats)
 from .utils import (humanize_leaderboard_name, organize_sidebar, create_leaderboard_list)
+from leaderboards import models
 
 leaderboards = leaderboard_classes;
 
@@ -178,7 +179,9 @@ def player_profile(request, playfabid):
     leaderboard_data = []
     latest_serial_numbers = {}
     for leaderboard_name in leaderboards:
-        leaderboard_model = globals()[leaderboard_name]
+        print("Looking for:", leaderboard_name)
+        print("Global variables:", globals().keys())
+        leaderboard_model = getattr(models, leaderboard_name)
         latest_serial_number = LatestLeaderboard.objects.get(leaderboard_name=leaderboard_name).serialnumber
         latest_serial_numbers[leaderboard_name] = latest_serial_number
         leaderboard_entry = leaderboard_model.objects.filter(
@@ -202,13 +205,13 @@ def player_profile(request, playfabid):
     for i in range(1, 8):
         date = today - timedelta(days=i)
         date_str = date.strftime("%Y%m%d")
-        highest_stat_value = DailyPlaytime.objects.filter(
+        highest_stat_value = leaderboard_model.objects.filter( # Changed from DailyPlaytime to leaderboard_model
             playfabid=player,
             playfabid__playfabid=playfabid,  # Filter for specific playfabid
             serialnumber__startswith=date_str
         ).aggregate(Max('stat_value'))['stat_value__max']
         if highest_stat_value:
-            playtime_entry = DailyPlaytime.objects.filter(
+            playtime_entry = leaderboard_model.objects.filter( # Changed from DailyPlaytime to leaderboard_model
                 playfabid=player,
                 playfabid__playfabid=playfabid,  # Filter for specific playfabid
                 serialnumber__startswith=date_str,
