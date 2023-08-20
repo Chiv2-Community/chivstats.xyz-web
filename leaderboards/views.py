@@ -15,16 +15,14 @@ from rest_framework.decorators import api_view
 from .serializers import (LatestLeaderboardSerializer, LeaderboardSerializer, PlayerSerializer)
 #import the leaderboard List since it should be defined just in one place
 from .models import (leaderboard_classes, Player, LatestLeaderboard, ChivstatsSumstats)
-from .utils import humanize_leaderboard_name
+from .utils import (humanize_leaderboard_name, organize_sidebar, create_leaderboard_list)
 
 leaderboards = leaderboard_classes;
-#Not to be included yet
-leaderboards.remove("ExperienceWeaponHeavyCrossbow")
-#For now simple alphabetical order
-leaderboards.sort(key=humanize_leaderboard_name);
-#list of dicts of url and readable text
-leaderboard_list_of_dict = [dict(url=i, leaderboard=humanize_leaderboard_name(i)) for i in leaderboards]
 
+#For now simple alphabetical order
+leaderboards.sort(key=organize_sidebar);
+#list of dicts of url and readable text
+leaderboard_list_of_dict = create_leaderboard_list()
 def tattle(request):
     players = Player.objects.filter(badlist=True)
     player_data = []
