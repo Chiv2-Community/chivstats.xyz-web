@@ -13,44 +13,17 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
 from .serializers import (LatestLeaderboardSerializer, LeaderboardSerializer, PlayerSerializer)
-from .models import (MetaAverageDailyPlaytime, ChivstatsSumstats, LatestLeaderboard, Leaderboard, Player, GlobalXp, Playtime, DailyPlaytime, ExperienceArcher,
-                     MetaAverageDailyPlaytime, ExperienceFootman, ExperienceVanguard, ExperienceKnight, ExperienceWeaponMorningStar,
-                     ExperienceWeaponHeavyCavalrySword, ExperienceWeaponThrowingMallet, ExperienceWeaponDagger,
-                     ExperienceWeaponMediumShield, ExperienceWeaponHeavyShield, ExperienceWeaponWarBow,
-                     ExperienceWeaponShovel, ExperienceWeaponQuarterstaff, ExperienceWeaponRapier,
-                     ExperienceWeaponWarHammer, ExperienceWeaponThrowingAxe, ExperienceWeaponExecutionersAxe,
-                     ExperienceWeaponCrossbow, ExperienceWeaponPoleHammer, ExperienceWeaponAxe,
-                     ExperienceWeaponHeavyMace, ExperienceWeaponBow, ExperienceWeaponKnife,
-                     ExperienceWeaponPickAxe, ExperienceWeaponCudgel, ExperienceWeaponFalchion, ExperienceWeaponWarClub, ExperienceWeaponSpear,
-                     ExperienceWeaponShortSword, ExperienceWeaponOneHandedSpear, ExperienceWeaponLance,
-                     ExperienceWeaponBattleAxe, ExperienceWeaponGlaive, ExperienceWeaponMace,
-                     ExperienceWeaponHalberd, ExperienceWeaponHighlandSword, ExperienceWeaponPoleAxe, ExperienceWeaponKatars, ExperienceWeaponMaul, ExperienceWeaponDaneAxe,
-                     ExperienceWeaponBastardSword, ExperienceWeaponJavelin, ExperienceWeaponGreatsword, ExperienceWeaponSword, ExperienceWeaponSledgeHammer, ExperienceWeaponLightShield,
-                     ExperienceWeaponTwoHandedHammer, ExperienceWeaponHatchet, ExperienceWeaponWarAxe,
-                     ExperienceWeaponThrowingKnife, ExperienceWeaponMesser, #'ExperienceWeaponHeavyCrossbow',
-                     )
-LEADERBOARDS = [
-    'MetaAverageDailyPlaytime', 'GlobalXp', 'Playtime', 'DailyPlaytime', 'ExperienceArcher', 'ExperienceFootman',
-    'ExperienceVanguard', 'ExperienceKnight', 'ExperienceWeaponMorningStar',
-    'ExperienceWeaponHeavyCavalrySword', 'ExperienceWeaponThrowingMallet',
-    'ExperienceWeaponDagger', 'ExperienceWeaponMediumShield', 'ExperienceWeaponHeavyShield',
-    'ExperienceWeaponWarBow', 'ExperienceWeaponShovel', 'ExperienceWeaponQuarterstaff',
-    'ExperienceWeaponRapier', 'ExperienceWeaponWarHammer', 'ExperienceWeaponThrowingAxe',
-    'ExperienceWeaponExecutionersAxe', 'ExperienceWeaponCrossbow', 'ExperienceWeaponPoleHammer',
-    'ExperienceWeaponAxe', 'ExperienceWeaponHeavyMace', 'ExperienceWeaponBow',
-    'ExperienceWeaponKnife', 'ExperienceWeaponPickAxe', 'ExperienceWeaponCudgel',
-    'ExperienceWeaponFalchion', 'ExperienceWeaponWarClub', 'ExperienceWeaponSpear',
-    'ExperienceWeaponShortSword', 'ExperienceWeaponOneHandedSpear', 'ExperienceWeaponLance',
-    'ExperienceWeaponBattleAxe', 'ExperienceWeaponGlaive', 'ExperienceWeaponMace',
-    'ExperienceWeaponHalberd', 'ExperienceWeaponHighlandSword', 'ExperienceWeaponPoleAxe',
-    'ExperienceWeaponKatars', 'ExperienceWeaponMaul', 'ExperienceWeaponDaneAxe',
-    'ExperienceWeaponBastardSword', 'ExperienceWeaponJavelin', 'ExperienceWeaponGreatsword',
-    'ExperienceWeaponSword', 'ExperienceWeaponSledgeHammer', 'ExperienceWeaponLightShield',
-    'ExperienceWeaponTwoHandedHammer', 'ExperienceWeaponHatchet', 'ExperienceWeaponWarAxe',
-    'ExperienceWeaponThrowingKnife', 'ExperienceWeaponMesser', #'ExperienceWeaponHeavyCrossbow',
-]
+#import the leaderboard List since it should be defined just in one place
+from .models import (leaderboard_classes, Player, LatestLeaderboard, ChivstatsSumstats)
+from .utils import (humanize_leaderboard_name, organize_sidebar, create_leaderboard_list)
+from leaderboards import models
 
+leaderboards = leaderboard_classes;
 
+#For now simple alphabetical order
+leaderboards.sort(key=organize_sidebar);
+#list of dicts of url and readable text
+leaderboard_list_of_dict = create_leaderboard_list()
 def tattle(request):
     players = Player.objects.filter(badlist=True)
     player_data = []
@@ -66,8 +39,6 @@ def tattle(request):
     }
     return render(request, 'leaderboards/tattle.html', context)
 
-def humanize_leaderboard_name(leaderboard_name):
-    return re.sub(r'(?<!^)([A-Z])', r' \1', leaderboard_name.replace('ExperienceWeapon', '')).title().lower()
 
 def test(request):
     now = datetime.datetime.now()
@@ -76,6 +47,7 @@ def test(request):
 
 def player_search(request):
     search_query = request.GET.get('search_query', '')
+    search_query = search_query.strip()
     if search_query:
         players = Player.objects.filter(alias_history__icontains=search_query)
         players = [{'playfabid': player.playfabid, 'name': player.most_common_alias()} for player in players]
@@ -84,7 +56,7 @@ def player_search(request):
     context = {
         'players': players,
         'search_query': search_query,
-        'leaderboards': {name: humanize_leaderboard_name(name) for name in LEADERBOARDS},
+        'leaderboards': leaderboard_list_of_dict,
     }
     return render(request, 'leaderboards/player_search.html', context)
 
@@ -103,8 +75,6 @@ def url_to_leaderboard_name(url):
     return formatted_url
 
 
-LEADERBOARDS_DICT = {leaderboard_name_to_url(name): name for name in LEADERBOARDS}
-
 from datetime import datetime
 
 from django.db.models import Max
@@ -114,7 +84,7 @@ def index(request):
     latest_update = datetime.strptime(str(latest_entry.serial_date), '%Y%m%d')
 
     context = {
-        'leaderboards': {name: humanize_leaderboard_name(name) for name in LEADERBOARDS},
+        'leaderboards': leaderboard_list_of_dict,
         'latest_entry': latest_entry,
         'latest_update': latest_update,  # Pass the datetime object
     }
@@ -137,7 +107,7 @@ def leaderboard(request, leaderboard_name):
     except ValueError:
         results_per_page = 50
 
-    if leaderboard_name not in LEADERBOARDS:
+    if leaderboard_name not in leaderboards:
         raise Http404("Leaderboard does not exist")
 
     latest_serial_number = LatestLeaderboard.objects.get(leaderboard_name=leaderboard_name).serialnumber
@@ -165,7 +135,7 @@ def leaderboard(request, leaderboard_name):
         'page_obj': page_obj,
         'leaderboard_name': humanize_leaderboard_name(leaderboard_name),
         'latest_update': latest_update,
-        'leaderboards': {name: humanize_leaderboard_name(name) for name in LEADERBOARDS},
+        'leaderboards': leaderboard_list_of_dict,
         'search_query': search_query,
         'show_recent_players': show_recent_players,
     }
@@ -174,7 +144,7 @@ def leaderboard(request, leaderboard_name):
 
 
 def get_leaderboard_data(leaderboard_name, page_number, results_per_page=50, search_query=''):
-    if leaderboard_name not in LEADERBOARDS:
+    if leaderboard_name not in leaderboards:
         raise Http404("Leaderboard does not exist")
     leaderboard_model = apps.get_model(app_label='leaderboards', model_name=leaderboard_name)
     latest_serial_number = LatestLeaderboard.objects.get(leaderboard_name=leaderboard_name).serialnumber
@@ -208,8 +178,10 @@ def player_profile(request, playfabid):
         raise Http404("Player does not exist")
     leaderboard_data = []
     latest_serial_numbers = {}
-    for leaderboard_name in LEADERBOARDS:
-        leaderboard_model = globals()[leaderboard_name]
+    for leaderboard_name in leaderboards:
+        print("Looking for:", leaderboard_name)
+        print("Global variables:", globals().keys())
+        leaderboard_model = getattr(models, leaderboard_name)
         latest_serial_number = LatestLeaderboard.objects.get(leaderboard_name=leaderboard_name).serialnumber
         latest_serial_numbers[leaderboard_name] = latest_serial_number
         leaderboard_entry = leaderboard_model.objects.filter(
@@ -233,13 +205,13 @@ def player_profile(request, playfabid):
     for i in range(1, 8):
         date = today - timedelta(days=i)
         date_str = date.strftime("%Y%m%d")
-        highest_stat_value = DailyPlaytime.objects.filter(
+        highest_stat_value = leaderboard_model.objects.filter( # Changed from DailyPlaytime to leaderboard_model
             playfabid=player,
             playfabid__playfabid=playfabid,  # Filter for specific playfabid
             serialnumber__startswith=date_str
         ).aggregate(Max('stat_value'))['stat_value__max']
         if highest_stat_value:
-            playtime_entry = DailyPlaytime.objects.filter(
+            playtime_entry = leaderboard_model.objects.filter( # Changed from DailyPlaytime to leaderboard_model
                 playfabid=player,
                 playfabid__playfabid=playfabid,  # Filter for specific playfabid
                 serialnumber__startswith=date_str,
@@ -256,7 +228,7 @@ def player_profile(request, playfabid):
         'aliases': player.aliases(),
         'leaderboard_data': leaderboard_data,
         'latest_serial_numbers': latest_serial_numbers,
-        'leaderboards': {name: humanize_leaderboard_name(name) for name in LEADERBOARDS},
+        'leaderboards': leaderboard_list_of_dict,
         'playtime_data': playtime_data,
     }
     return render(request, 'leaderboards/playerprofile.html', context)
@@ -299,7 +271,7 @@ def go_touch_grass_leaderboard(request):
         'page_obj': page_obj,
         'leaderboard_name': 'Go Touch Grass Leaderboard',
         'latest_update': latest_update,
-        'leaderboards': {name: humanize_leaderboard_name(name) for name in LEADERBOARDS},
+        'leaderboards': leaderboard_list_of_dict,
         'search_query': search_query,
     }
     return render(request, 'leaderboards/go_touch_grass_leaderboard.html', context)

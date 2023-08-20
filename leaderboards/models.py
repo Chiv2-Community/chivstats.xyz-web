@@ -75,7 +75,7 @@ leaderboard_classes = [
 from rest_framework import serializers
 
 model_classes = {}
-
+#TODO:use one table and reorganize and/or take a deeper look at schema
 for class_name in leaderboard_classes:
     table_name = class_name.lower()
     meta_class = type('Meta', (), {'db_table': table_name})
@@ -86,4 +86,5 @@ for class_name in leaderboard_classes:
     serializer_meta_class = type('Meta', (), {'model': new_class, 'fields': ['playfabid', 'stat_value', 'serialnumber']})
     serializer_class = type(f"{class_name}Serializer", (serializers.ModelSerializer,), {'Meta': serializer_meta_class})
     globals()[f"{class_name}Serializer"] = serializer_class
+print("Global variables in models.py:", globals().keys())
 
