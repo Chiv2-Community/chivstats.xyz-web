@@ -40,24 +40,21 @@
             line-height: .8;
         }
     </style>
-    <style>
-        .nav-link {
-            padding: .1rem .5rem;
-        }
-        .nav-item {
-            margin-bottom: .1rem;
-        }
-        .container-fluid {
-            padding: .5rem;
-        }
-        .px-md-4 {
-            padding-left: .25rem !important;
-            padding-right: .25rem !important;
-        }
-        .pt-3 {
-            padding-top: .1rem !important;
-        }
-    </style>
+<style>
+    .nav-link {
+        padding: .1rem .5rem;
+    }
+    .nav-item {
+        margin-bottom: .1rem;
+    }
+    .sidebar {
+        width: fit-content; /* Make the width adapt to the content */
+    }
+    .nav-item span.nav-link.font-weight-bold {
+        color: grey; /* Set the text color to grey */
+    }
+</style>
+
     <style>
         .search-results td {
             padding-right: 1rem;  /* Adjust as needed */
@@ -80,7 +77,7 @@
                             <a class="nav-link" href="{% url 'leaderboards:index' %}">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="https://discord.gg/8Wg76FaNvm">'C2DM' Chivstats Discord</a>
+                            <a class="nav-link" href="https://discord.gg/chiv2unchained">Chivalry Unchained Discord</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'leaderboards:player_search' %}">Player Search</a>
