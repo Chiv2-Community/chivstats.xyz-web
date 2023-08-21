@@ -26,7 +26,7 @@ leaderboards = copy(leaderboard_classes);
 #For now simple alphabetical order
 leaderboards.sort(key=organize_sidebar);
 #list of dicts of url and readable text
-leaderboard_list_of_dict = create_leaderboard_list(leaderboards)
+leaderboard_list_of_dict = create_leaderboard_list()
 
 def tattle(request):
     players = Player.objects.filter(badlist=True)
