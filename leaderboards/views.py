@@ -179,8 +179,6 @@ def player_profile(request, playfabid):
     leaderboard_data = []
     latest_serial_numbers = {}
     for leaderboard_name in leaderboards:
-        print("Looking for:", leaderboard_name)
-        print("Global variables:", globals().keys())
         leaderboard_model = getattr(models, leaderboard_name)
         latest_serial_number = LatestLeaderboard.objects.get(leaderboard_name=leaderboard_name).serialnumber
         latest_serial_numbers[leaderboard_name] = latest_serial_number
@@ -221,7 +219,7 @@ def player_profile(request, playfabid):
                 'date': date.strftime("%B %d, %Y"),
                 'playtime': playtime_entry.stat_value,
             })
-    print(playtime_data)
+    #print(playtime_data)
     context = {
         'playfabid': playfabid,
         'player': player,
