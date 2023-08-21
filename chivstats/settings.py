@@ -10,13 +10,23 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import os, platform
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+chivcred_location = os.environ.get("CHIVCRED_LOCATION")
+if(chivcred_location is None):
+    chivcred_location = '/home/webchiv/chivproject/config/chivcreds.txt'
+#needed to run my local system without feeling bad about keeping this file always modified
+if platform.system() == 'Darwin':
+    host = '/tmp'
+else:
+    host = '/var/run/postgresql'
+
 # SECURITY WARNING: keep the secret key used in production secret!
-with open('/home/webchiv/chivproject/config/chivcreds.txt') as f:
+with open(chivcred_location) as f:
     SECRET_KEY = f.read().strip()
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -95,7 +105,7 @@ DATABASES = {
         'NAME': 'chivstats',
         'USER': 'webchiv',
         'PASSWORD': '',  # If you have a password, put it here
-        'HOST': '/var/run/postgresql',
+        'HOST': host,
         'PORT': '',  # No need to specify a port when using a Unix socket like this
     }
 }
