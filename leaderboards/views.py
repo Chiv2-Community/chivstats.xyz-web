@@ -1,29 +1,33 @@
-from datetime import datetime, timedelta
 import re
+from copy import copy
+from datetime import datetime
+from datetime import timedelta
 
-from django.shortcuts import render, get_object_or_404, redirect
-from django.core.paginator import Paginator
-from django.utils.text import slugify
-from django.db.models import Avg, Max
 from django.apps import apps
-from django.http import HttpResponse, Http404
-from rest_framework import generics, serializers
+from django.core.paginator import Paginator
+from django.db.models import Avg
+from django.db.models import Max
+from django.http import Http404
+from django.shortcuts import render
+from rest_framework import generics
+from rest_framework.decorators import api_view
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
-from rest_framework.decorators import api_view
 
-from .serializers import (LatestLeaderboardSerializer, LeaderboardSerializer, PlayerSerializer)
-#import the leaderboard List since it should be defined just in one place
-from .models import (leaderboard_classes, Player, LatestLeaderboard, ChivstatsSumstats)
-from .utils import (humanize_leaderboard_name, organize_sidebar, create_leaderboard_list)
 from leaderboards import models
+from .models import Leaderboard, Player
+# import the leaderboard List since it should be defined just in one place
+from .models import (leaderboard_classes, LatestLeaderboard, ChivstatsSumstats)
+from .serializers import (LatestLeaderboardSerializer, PlayerSerializer)
+from .serializers import LeaderboardSerializer
+from .utils import (humanize_leaderboard_name, organize_sidebar, create_leaderboard_list)
 
-leaderboards = leaderboard_classes;
-
+leaderboards = copy(leaderboard_classes);
 #For now simple alphabetical order
 leaderboards.sort(key=organize_sidebar);
 #list of dicts of url and readable text
-leaderboard_list_of_dict = create_leaderboard_list()
+leaderboard_list_of_dict = create_leaderboard_list(leaderboards)
+
 def tattle(request):
     players = Player.objects.filter(badlist=True)
     player_data = []
@@ -38,12 +42,6 @@ def tattle(request):
         'players': player_data,
     }
     return render(request, 'leaderboards/tattle.html', context)
-
-
-def test(request):
-    now = datetime.datetime.now()
-    html = "<html><body>It is now %s.</body></html>" % now
-    return HttpResponse(html)
 
 def player_search(request):
     search_query = request.GET.get('search_query', '')
@@ -60,11 +58,14 @@ def player_search(request):
     }
     return render(request, 'leaderboards/player_search.html', context)
 
+
+#Is this used?  Can we remove?
 def leaderboard_name_to_url(leaderboard_name):
     if leaderboard_name.startswith('ExperienceWeapon'):
         leaderboard_name = leaderboard_name.replace('ExperienceWeapon', '')
     return re.sub(r'(?<!^)([A-Z])', r'-\1', leaderboard_name).lower()
 
+#is this used?
 def url_to_leaderboard_name(url):
     formatted_url = url.replace('-', ' ').title().replace(' ', '')
     print(f'Formatted URL: {formatted_url}')  # Debugging line
@@ -74,10 +75,6 @@ def url_to_leaderboard_name(url):
         formatted_url = 'ExperienceWeapon' + formatted_url
     return formatted_url
 
-
-from datetime import datetime
-
-from django.db.models import Max
 
 def index(request):
     latest_entry = ChivstatsSumstats.objects.latest('serial_date')
@@ -179,8 +176,6 @@ def player_profile(request, playfabid):
     leaderboard_data = []
     latest_serial_numbers = {}
     for leaderboard_name in leaderboards:
-        print("Looking for:", leaderboard_name)
-        print("Global variables:", globals().keys())
         leaderboard_model = getattr(models, leaderboard_name)
         latest_serial_number = LatestLeaderboard.objects.get(leaderboard_name=leaderboard_name).serialnumber
         latest_serial_numbers[leaderboard_name] = latest_serial_number
@@ -221,7 +216,7 @@ def player_profile(request, playfabid):
                 'date': date.strftime("%B %d, %Y"),
                 'playtime': playtime_entry.stat_value,
             })
-    print(playtime_data)
+    #print(playtime_data)
     context = {
         'playfabid': playfabid,
         'player': player,
@@ -335,11 +330,6 @@ def get_leaderboard(request):
     # Handle other cases or return an error if not found
     return Response({'error': 'Invalid leaderboard_name'}, status=400)
 
-
-
-from rest_framework import generics, serializers
-from .models import Leaderboard, Player
-from .serializers import LeaderboardSerializer
 
 class LeaderboardListAPIView(generics.ListAPIView):
     serializer_class = LeaderboardSerializer

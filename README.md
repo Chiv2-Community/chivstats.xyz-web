@@ -39,16 +39,23 @@ Static files are organized under the `static` directory, including:
 - **favicon.ico**: The favicon for the website.
 
 ## Requirements
+Python is required.  The required python packages for the project can be found in `requirements.txt` and can be installed with pip.
 
-The required packages for the project can be found in `requirements.txt`.
+Chivstats needs a postgres server installed and running.  https://wiki.postgresql.org/wiki/Homebrew. For full development get the schema and dump from gimmic (or download here).
 
+To run the project, you'll need to have Django installed and configured. You can follow the standard Django project setup, including applying migrations and running the develop
+ment server.
 ## Running the Project
 
-To run the project, you'll need to have Django installed and configured. You can follow the standard Django project setup, including applying migrations and running the development server.
+Create a "secrets" file and install it.  Use the environment variable $CHIVCRED_LOCATION or use the default location defined in chivstats/settings.py.
+
+Run your postgres server with the db dump
+
+Run 'python manage.py runserver'
 
 ## Contributing
 
-Contributions to the project are welcome! Feel free to open an issue or submit a pull request.
+Contributions to the project are welcome at https://github.com/Chiv2-Community/chivstats.xyz-web! Feel free to open an issue or submit a pull request.
 
 ## License
 
