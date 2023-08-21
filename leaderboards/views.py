@@ -126,16 +126,17 @@ def leaderboard(request, leaderboard_name):
                          'value': entry.stat_value,
                          'rank': i + 1 + ((page_obj.number - 1) * results_per_page)}
                         for i, entry in enumerate(page_obj)]
-
     context = {
         'leaderboard_data': leaderboard_data,
         'page_obj': page_obj,
+        'leaderboard_name_url': (leaderboard_name),
         'leaderboard_name': humanize_leaderboard_name(leaderboard_name),
         'latest_update': latest_update,
         'leaderboards': leaderboard_list_of_dict,
         'search_query': search_query,
         'show_recent_players': show_recent_players,
     }
+
     return render(request, 'leaderboards/leaderboard.html', context)
 
 

@@ -22,7 +22,7 @@
 </form>
 
 <!-- Search form -->
-<form method="GET" action="{% url 'leaderboards:leaderboard' leaderboard_name %}">
+<form method="GET" action="{% url 'leaderboards:leaderboard' leaderboard_name_url %}">
     <div class="input-group mb-3">
         <input type="text" class="form-control custom-input" name="search_query" placeholder="Enter player name" value="{{ search_query }}">
         <div class="input-group-append">
