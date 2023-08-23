@@ -1,4 +1,6 @@
 import re
+from copy import copy
+
 from .models import (leaderboard_classes)
 
 WeaponCategoryIndicator='ExperienceWeapon'
@@ -22,7 +24,11 @@ def create_leaderboard_list():
     leaderboard_list_of_dict = []
     leaderboard_list_of_dict.append(dict(url="", leaderboard='Experience', category="category"))
     currentCategory = 'experience'
-    for leaderboardItem in leaderboard_classes:
+    leaderboards = copy(leaderboard_classes);
+    # For now simple alphabetical order
+    leaderboards.sort(key=organize_sidebar);
+
+    for leaderboardItem in leaderboards:
         if currentCategory != categorize_sidebar(leaderboardItem):
             leaderboard_list_of_dict.append(dict(url="", leaderboard='Weapons', category="category"))
             currentCategory = categorize_sidebar(leaderboardItem)
