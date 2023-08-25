@@ -1,0 +1,40 @@
+{% extends "leaderboards/base.html" %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<canvas id="hourlyPlayerCountGraph" width="400" height="200"></canvas>
+
+<script>
+    fetch('/api/hourly-player-count/')
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('hourlyPlayerCountGraph').getContext('2d');
+            const labels = data.map(entry => new Date(entry.timestamp_hour));
+            const values = data.map(entry => entry.player_count);
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Hourly Player Count',
+                        data: values,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        fill: false
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'hour'
+                            }
+                        }
+                    }
+                }
+            });
+        });
+</script>
+{% endblock %}
