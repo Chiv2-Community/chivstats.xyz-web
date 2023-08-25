@@ -7,7 +7,7 @@ from django.apps import apps
 from django.core.paginator import Paginator
 from django.db.models import Avg
 from django.db.models import Max
-from django.http import Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import render
 from rest_framework import generics
 from rest_framework.decorators import api_view
@@ -15,7 +15,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
 from leaderboards import models
-from .models import Leaderboard, Player
+from .models import Leaderboard, Player, HourlyPlayerCount
 # import the leaderboard List since it should be defined just in one place
 from .models import (leaderboard_classes, LatestLeaderboard, ChivstatsSumstats)
 from .serializers import (LatestLeaderboardSerializer, PlayerSerializer)
@@ -27,6 +27,17 @@ leaderboards = copy(leaderboard_classes);
 leaderboards.sort(key=organize_sidebar);
 #list of dicts of url and readable text
 leaderboard_list_of_dict = create_leaderboard_list()
+
+def get_leaderboards_context():
+    return {'leaderboards': leaderboard_list_of_dict}
+
+def get_hourly_player_count(request):
+    if request.path.endswith('/api/hourly-player-count/'):
+        data = list(HourlyPlayerCount.objects.values('timestamp_hour', 'player_count'))
+        return JsonResponse(data, safe=False)
+    else:
+        context = get_leaderboards_context()  # Get the leaderboards context
+        return render(request, 'leaderboards/hourly_graph.html', context)
 
 def tattle(request):
     players = Player.objects.filter(badlist=True)
