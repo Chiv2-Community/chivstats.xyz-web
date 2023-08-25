@@ -10,6 +10,11 @@ class HourlyPlayerCount(models.Model):
         db_table = 'hourly_player_count'
         ordering = ['timestamp_hour']
 
+class DailyPlaytime(models.Model):
+    serialnumber = models.BigIntegerField()
+    leaderboard_name = models.CharField(max_length=255)
+    playfabid = models.CharField(max_length=255)
+    stat_value = models.BigIntegerField()
 
 class LatestLeaderboard(models.Model):
     leaderboard_name = models.CharField(max_length=255, primary_key=True)
