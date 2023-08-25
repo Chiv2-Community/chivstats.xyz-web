@@ -28,9 +28,16 @@ leaderboards.sort(key=organize_sidebar);
 #list of dicts of url and readable text
 leaderboard_list_of_dict = create_leaderboard_list()
 
+def get_leaderboards_context():
+    return {'leaderboards': leaderboard_list_of_dict}
+
 def get_hourly_player_count(request):
-    data = list(HourlyPlayerCount.objects.values('timestamp_hour', 'player_count'))
-    return JsonResponse(data, safe=False)
+    if request.path.endswith('/api/hourly-player-count/'):
+        data = list(HourlyPlayerCount.objects.values('timestamp_hour', 'player_count'))
+        return JsonResponse(data, safe=False)
+    else:
+        context = get_leaderboards_context()  # Get the leaderboards context
+        return render(request, 'leaderboards/hourly_graph.html', context)
 
 def tattle(request):
     players = Player.objects.filter(badlist=True)

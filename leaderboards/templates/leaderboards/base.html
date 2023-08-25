@@ -82,6 +82,9 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'leaderboards:player_search' %}">Player Search</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'leaderboards:hourly_player_count' %}">Hourly Player Count</a>
+                        </li>
                         {% block sidebar %}
                         {% for item in leaderboards %}
                         {% if item.category == 'category' %}

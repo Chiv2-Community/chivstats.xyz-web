@@ -7,7 +7,9 @@ class HourlyPlayerCount(models.Model):
     player_count = models.IntegerField()
 
     class Meta:
+        db_table = 'hourly_player_count'
         ordering = ['timestamp_hour']
+
 
 class LatestLeaderboard(models.Model):
     leaderboard_name = models.CharField(max_length=255, primary_key=True)

@@ -30,7 +30,7 @@ with open(chivcred_location) as f:
     SECRET_KEY = f.read().strip()
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 ALLOWED_HOSTS = ['*']
 if DEBUG:
     import socket
