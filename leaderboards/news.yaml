@@ -1,0 +1,32 @@
+- date: 2023-08-24
+  content: Initial (Cumulative) hourly player charting. (<a href="https://github.com/Chiv2-Community/chivstats.xyz-web/pull/12">pr</a>)
+- date: 2023-08-20
+  content: Initial Nav index resort (<a href="https://github.com/Chiv2-Community/chivstats.xyz-web/pull/2">pr</a>)
+- date: 2023-08-01
+  content: Added initial implementation of a timeframe-limited leaderboard, available as a checkbox on each leaderboard. Minor formatting/context improvements.
+- date: 2023-07-31
+  content: This frontend code is now part of the <a href="https://github.com/Chiv2-Community/chvistats.xyz-web">Chivalry 2 Community github</a>.
+- date: 2023-06-11
+  content: Improvements to player search, player profiles, daily sumstats, and other associated logic(data indexing, storage, caching).
+- date: 2023-06-10
+  content: Basic player search functionality re-implemented.
+- date: 2023-06-09
+  content: Polling process updated to backend. Updates hourly again. Some filtering added on the backend.
+- date: 2023-06-07
+  content: Rough working concept online. Polish soon. Automatically updating data soon.
+- date: 2023-06-02
+  content: <a href="https://discord.gg/chiv2unchained">'Chivalry 2 Unchained'</a> discord formed in partnership w/ Polehammer.net folks.
+- date: 2023-05-28
+  content: Moved from nosql backend to a relational db. 6.2 M unique players, 200M leaderboard rows.
+- date: 2023-05-28
+  content: Pivoted to new format. Fixed some things, broke some things. Cleanup next.
+- date: 2023-05-26
+  content: Added https/tls, added development mode for maintenance windows..
+- date: 2023-05-25
+  content: Improved pagination, added player search to leaderboards.
+- date: 2023-05-25
+  content: Added pagination and improved display.
+- date: 2023-05-25
+  content: Added caching and player search.
+- date: 2023-04-15
+  content: Initial creation, gathering, parsing of stats.

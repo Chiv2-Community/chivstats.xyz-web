@@ -10,6 +10,7 @@ from django.db.models import Max
 from django.http import Http404, JsonResponse
 from django.shortcuts import render
 from rest_framework import generics
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
@@ -20,7 +21,7 @@ from .models import Leaderboard, Player, HourlyPlayerCount
 from .models import (leaderboard_classes, LatestLeaderboard, ChivstatsSumstats)
 from .serializers import (LatestLeaderboardSerializer, PlayerSerializer)
 from .serializers import LeaderboardSerializer
-from .utils import (humanize_leaderboard_name, organize_sidebar, create_leaderboard_list)
+from .utils import (humanize_leaderboard_name, organize_sidebar, create_leaderboard_list, read_yaml_news, to_json)
 
 leaderboards = copy(leaderboard_classes);
 #For now simple alphabetical order
@@ -90,11 +91,13 @@ def url_to_leaderboard_name(url):
 def index(request):
     latest_entry = ChivstatsSumstats.objects.latest('serial_date')
     latest_update = datetime.strptime(str(latest_entry.serial_date), '%Y%m%d')
-
+    news = read_yaml_news()
+    news.sort(reverse=True, key=lambda x : x['date'])
     context = {
         'leaderboards': leaderboard_list_of_dict,
         'latest_entry': latest_entry,
-        'latest_update': latest_update,  # Pass the datetime object
+        'latest_update': latest_update,
+        'news' : news
     }
     return render(request, 'leaderboards/index.html', context)
 

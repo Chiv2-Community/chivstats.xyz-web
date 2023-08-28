@@ -1,7 +1,31 @@
+import json
+import os
 import re
 from copy import copy
+from datetime import date, datetime
+
+import yaml
 
 from .models import (leaderboard_classes)
+
+NEWS_DIR = os.path.dirname(os.path.abspath(__file__))+"/news.yaml"
+
+def json_serial(obj):
+    """JSON serializer for objects not serializable by default json code"""
+    if isinstance(obj, (datetime, date)):
+        return obj.isoformat()
+    raise TypeError ("Type %s not serializable" % type(obj))
+
+def read_yaml_news():
+    #returns python news object from yaml
+    with open(NEWS_DIR, 'r') as file:
+        news = yaml.safe_load(file)
+    return news
+
+
+def to_json(obj, prettyPrint=False):
+    #print json from python object
+    return json.dumps(obj, indent=None if prettyPrint==False else 4, default=json_serial)
 
 WeaponCategoryIndicator='ExperienceWeapon'
 def organize_sidebar(leaderboard_name):
