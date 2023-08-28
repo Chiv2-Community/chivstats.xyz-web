@@ -2,6 +2,20 @@ from django.db import models
 from django.db.models import JSONField
 from rest_framework import serializers
 
+class HourlyPlayerCount(models.Model):
+    timestamp_hour = models.DateTimeField()
+    player_count = models.IntegerField()
+
+    class Meta:
+        db_table = 'hourly_player_count'
+        ordering = ['timestamp_hour']
+
+class DailyPlaytime(models.Model):
+    serialnumber = models.BigIntegerField()
+    leaderboard_name = models.CharField(max_length=255)
+    playfabid = models.CharField(max_length=255)
+    stat_value = models.BigIntegerField()
+
 class LatestLeaderboard(models.Model):
     leaderboard_name = models.CharField(max_length=255, primary_key=True)
     serialnumber = models.IntegerField()

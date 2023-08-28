@@ -10,6 +10,7 @@ media
 *.bak 
 *.sh
 *.zip
+*.xz
 
 # Environments 
 .env 
