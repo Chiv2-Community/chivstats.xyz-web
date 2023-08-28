@@ -2,8 +2,6 @@ from django.urls import path
 from . import views
 from .views import PlayerListAPIView, LatestLeaderboardListAPIView, LeaderboardListAPIView, get_leaderboard
 
-
-
 app_name = 'leaderboards'
 
 urlpatterns = [
@@ -17,7 +15,7 @@ urlpatterns = [
     path('api/latest-leaderboards/', LatestLeaderboardListAPIView.as_view(), name='latest-leaderboards'),
     path('api/leaderboards/', LeaderboardListAPIView.as_view(), name='leaderboards-api'),
     path('api/get_leaderboard/', views.get_leaderboard, name='get_leaderboard'),
+    path('hourly_player_count/', views.get_hourly_player_count, name='hourly_player_count'),
+    path('api/hourly-player-count/', views.get_hourly_player_count, name='api_hourly_player_count'),
     path('<str:leaderboard_name>/', views.leaderboard, name='leaderboard'),
-    
-    
 ]

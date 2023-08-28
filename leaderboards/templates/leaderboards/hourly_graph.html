@@ -1,0 +1,70 @@
+{% extends "leaderboards/base.html" %}
+
+{% block content %}
+<!-- Moment.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+
+<!-- Chart.js v2 and its Moment.js adapter -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@0.1.1"></script>
+
+<canvas id="hourlyPlayerCountGraph" width="400" height="200"></canvas>
+
+<script>
+    fetch('/leaderboards/api/hourly-player-count/')
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('hourlyPlayerCountGraph').getContext('2d');
+            const labels = data.map(entry => moment.utc(entry.timestamp_hour).local().format('MMM D, YYYY h:mm A z'));  // Convert UTC to local time and format it
+            const values = data.map(entry => entry.player_count);
+            const deltas = values.map((value, index, array) => index === 0 ? 0 : value - array[index - 1]);
+
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Cumulative Hourly Player count',
+                        data: values,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        fill: false
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'hour',
+                                displayFormats: {
+                                    hour: 'MMM D, YYYY h:mm A z'  // Display time in 12-hour format with human-friendly timezone
+                                },
+                                tooltipFormat: 'MMM D, YYYY h:mm A z'  // Tooltip format
+                            },
+                            distribution: 'linear'
+                        }
+                    },
+                    animation: {
+    onComplete: function() {
+        const ctx = chart.ctx;
+        ctx.fillStyle = 'black';  // Set text color to black
+        ctx.font = Chart.helpers.fontString(Chart.defaults.global.defaultFontSize, 'bold', Chart.defaults.global.defaultFontFamily);  // Set font to bold
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+
+        chart.data.datasets.forEach(function(dataset, i) {
+            const meta = chart.getDatasetMeta(i);
+            meta.data.forEach(function(bar, index) {
+                const delta = deltas[index];
+                const deltaText = delta >= 0 ? `+${delta}` : `${delta}`;
+                ctx.fillText(deltaText, bar._model.x, bar._model.y - 5);
+            });
+        });
+    }
+}
+
+                }
+            });
+        });
+</script>
+{% endblock %}
