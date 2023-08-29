@@ -1,3 +1,5 @@
+- date: 2023-08-29
+  content: Stats gathering is fully automated, and should be nightly! Initial addition of Playtime Ex, TBS' fix for the integer overflow in Playtime.. news moved to yaml format.
 - date: 2023-08-24
   content: Initial (Cumulative) hourly player charting. (<a href="https://github.com/Chiv2-Community/chivstats.xyz-web/pull/12">pr</a>)
 - date: 2023-08-20
