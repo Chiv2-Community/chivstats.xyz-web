@@ -2,7 +2,7 @@
 from rest_framework import serializers
 from .models import Leaderboard, LatestLeaderboard, Player, leaderboard_classes  # Import your leaderboard model
 from .models import (
-    GlobalXp, Playtime, DailyPlaytime, ExperienceArcher,
+    GlobalXp, Playtime, DailyPlaytime, PlaytimeEx, ExperienceArcher,
     ExperienceFootman, ExperienceVanguard, ExperienceKnight,
     ExperienceWeaponMorningStar, ExperienceWeaponHeavyCavalrySword,
     ExperienceWeaponThrowingMallet, ExperienceWeaponDagger,
@@ -28,6 +28,7 @@ model_mapping = {
     'GlobalXp': GlobalXp,
     'Playtime': Playtime,
     'DailyPlaytime': DailyPlaytime,
+    'PlaytimeEx': PlaytimeEx,
     'ExperienceArcher': ExperienceArcher,
     'ExperienceFootman': ExperienceFootman,
     'ExperienceVanguard': ExperienceVanguard,

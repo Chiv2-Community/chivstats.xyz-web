@@ -82,7 +82,7 @@ def url_to_leaderboard_name(url):
     formatted_url = url.replace('-', ' ').title().replace(' ', '')
     print(f'Formatted URL: {formatted_url}')  # Debugging line
     if not any(formatted_url.startswith(word) for word in
-               ['GlobalXp', 'Playtime', 'DailyPlaytime', 'ExperienceArcher', 'ExperienceFootman', 'ExperienceVanguard',
+               ['GlobalXp', 'Playtime', 'PlaytimeEx' 'DailyPlaytime', 'ExperienceArcher', 'ExperienceFootman', 'ExperienceVanguard',
                 'ExperienceKnight']):
         formatted_url = 'ExperienceWeapon' + formatted_url
     return formatted_url

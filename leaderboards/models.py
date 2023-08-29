@@ -16,6 +16,12 @@ class DailyPlaytime(models.Model):
     playfabid = models.CharField(max_length=255)
     stat_value = models.BigIntegerField()
 
+class PlaytimeEx(models.Model):
+    serialnumber = models.BigIntegerField()
+    leaderboard_name = models.CharField(max_length=255)
+    playfabid = models.CharField(max_length=255)
+    stat_value = models.BigIntegerField()
+
 class LatestLeaderboard(models.Model):
     leaderboard_name = models.CharField(max_length=255, primary_key=True)
     serialnumber = models.IntegerField()
@@ -74,7 +80,7 @@ class MetaAverageDailyPlaytime(models.Model):
 # Define class names and corresponding table names
 # Define class names
 leaderboard_classes = [
-    "GlobalXp", "Playtime", "DailyPlaytime", "ExperienceArcher", "ExperienceFootman", "ExperienceVanguard", "ExperienceKnight", "ExperienceWeaponMorningStar", "ExperienceWeaponHeavyCavalrySword",
+    "GlobalXp", "Playtime", "PlaytimeEx", "DailyPlaytime", "ExperienceArcher", "ExperienceFootman", "ExperienceVanguard", "ExperienceKnight", "ExperienceWeaponMorningStar", "ExperienceWeaponHeavyCavalrySword",
     "ExperienceWeaponThrowingMallet", "ExperienceWeaponDagger", "ExperienceWeaponMediumShield", "ExperienceWeaponHeavyShield", "ExperienceWeaponWarBow", "ExperienceWeaponShovel",
     "ExperienceWeaponQuarterstaff", "ExperienceWeaponRapier", "ExperienceWeaponWarHammer", "ExperienceWeaponThrowingAxe", "ExperienceWeaponExecutionersAxe", "ExperienceWeaponCrossbow",
     "ExperienceWeaponPoleHammer", "ExperienceWeaponAxe", "ExperienceWeaponHeavyMace", "ExperienceWeaponBow", "ExperienceWeaponKnife", "ExperienceWeaponPickAxe",
