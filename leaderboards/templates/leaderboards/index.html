@@ -32,38 +32,10 @@
 
     <h2 class="mb-3" style="color: #007bff;">Changelog</h2>
     <ul class="list-group">
+         {% for news_entry in news %}
         <li class="list-group-item" style="border-left: 4px solid #007bff; padding-left: 20px;">
-            <span style="font-weight: bold; color: #007bff;">2023-08-24</span> Initial (Cumulative) hourly player charting. (<a href="https://github.com/Chiv2-Community/chivstats.xyz-web/pull/12">pr</a>)</li>
-        <li class="list-group-item" style="border-left: 4px solid #007bff; padding-left: 20px;">
-            <span style="font-weight: bold; color: #007bff;">2023-08-20</span> Initial Nav index resort (<a href="https://github.com/Chiv2-Community/chivstats.xyz-web/pull/2">pr</a>)</li>
-        <li class="list-group-item" style="border-left: 4px solid #007bff; padding-left: 20px;">
-            <span style="font-weight: bold; color: #007bff;">2023-08-01</span> Added initial implementation of a timeframe-limited leaderboard, available as a checkbox on each leaderboard. Minor formatting/context improvements.</li>
-        <li class="list-group-item" style="border-left: 4px solid #007bff; padding-left: 20px;">
-            <span style="font-weight: bold; color: #007bff;">2023-07-31</span> This frontend code is now part of the <a href="https://github.com/Chiv2-Community/chvistats.xyz-web">Chivalry 2 Community github</a>.</li>
-        <li class="list-group-item" style="border-left: 4px solid #007bff; padding-left: 20px;">
-            <span style="font-weight: bold; color: #007bff;">2023-06-11</span> Improvements to player search, player profiles, daily sumstats, and other associated logic(data indexing, storage, caching). </li>
-        <li class="list-group-item" style="border-left: 4px solid #007bff; padding-left: 20px;">
-            <span style="font-weight: bold; color: #007bff;">2023-06-10</span> Basic player search functionality re-implemented. </li>
-        <li class="list-group-item" style="border-left: 4px solid #007bff; padding-left: 20px;">
-            <span style="font-weight: bold; color: #007bff;">2023-06-09</span> Polling process updated to backend. Updates hourly again. Some filtering added on the backend. </li>
-        <li class="list-group-item" style="border-left: 4px solid #007bff; padding-left: 20px;">
-            <span style="font-weight: bold; color: #007bff;">2023-06-07</span> Rough working concept online. Polish soon. Automatically updating data soon.</li>
-        <li class="list-group-item" style="border-left: 4px solid #007bff; padding-left: 20px;">
-            <span style="font-weight: bold; color: #007bff;">2023-06-02</span> <a href="https://discord.gg/chiv2unchained">'Chivalry 2 Unchained'</a> discord formed in partnership w/ Polehammer.net folks.</li>
-        <li class="list-group-item" style="border-left: 4px solid #007bff; padding-left: 20px;">
-            <span style="font-weight: bold; color: #007bff;">2023-05-28</span> Moved from nosql backend to a relational db. 6.2 M unique players, 200M leaderboard rows.</li>
-        <li class="list-group-item" style="border-left: 4px solid #007bff; padding-left: 20px;">
-            <span style="font-weight: bold; color: #007bff;">2023-05-28</span> Pivoted to new format. Fixed some things, broke some things. cleanup next.</li>
-        <li class="list-group-item" style="border-left: 4px solid #007bff; padding-left: 20px;">
-            <span style="font-weight: bold; color: #007bff;">2023-05-26</span> Added https/tls, added development mode for maintenance windows..</li>
-        <li class="list-group-item" style="border-left: 4px solid #007bff; padding-left: 20px;">
-            <span style="font-weight: bold; color: #007bff;">2023-05-25</span> improved pagination, added player search to leaderboards.</li>
-        <li class="list-group-item" style="border-left: 4px solid #007bff; padding-left: 20px;">
-            <span style="font-weight: bold; color: #007bff;">2023-05-25</span> added pagination and improved display.</li>
-        <li class="list-group-item" style="border-left: 4px solid #007bff; padding-left: 20px;">
-            <span style="font-weight: bold; color: #007bff;">2023-05-25</span> added caching and player search.</li>
-        <li class="list-group-item" style="border-left: 4px solid #007bff; padding-left: 20px;">
-            <span style="font-weight: bold; color: #007bff;">2023-04-15</span> Initial creation, gathering, parsing of stats.</li>
+            <span style="font-weight: bold; color: #007bff;">{{ news_entry.date|date:"Y-m-d"}}</span> {{news_entry.content|safe}}</li>
+        {% endfor %}
     </ul>
     <br>
     <br>
