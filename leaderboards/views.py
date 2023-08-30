@@ -5,6 +5,7 @@ from datetime import timedelta
 
 from django.apps import apps
 from django.core.paginator import Paginator
+from django.db import connection
 from django.db.models import Avg
 from django.db.models import Max
 from django.http import Http404, JsonResponse
@@ -87,6 +88,98 @@ def url_to_leaderboard_name(url):
         formatted_url = 'ExperienceWeapon' + formatted_url
     return formatted_url
 
+def get_top_gainers(time_period, table_name, page=1, items_per_page=50):
+    offset = (page - 1) * items_per_page
+    sql_query = f"""
+    WITH DailyMaxExperience AS (
+        SELECT
+            playfabid,
+            TO_DATE(LEFT(CAST(serialnumber AS TEXT), 8), 'YYYYMMDD') AS date,
+            MAX(stat_value) AS max_stat_value_per_day
+        FROM {table_name}
+        WHERE TO_DATE(LEFT(CAST(serialnumber AS TEXT), 8), 'YYYYMMDD') >= CURRENT_DATE - INTERVAL '{time_period} days'
+        GROUP BY playfabid, date
+        ORDER BY playfabid, date
+    ),
+    DailyGains AS (
+        SELECT 
+            playfabid,
+            date,
+            max_stat_value_per_day - LAG(max_stat_value_per_day, 1) OVER (PARTITION BY playfabid ORDER BY date) AS daily_gain
+        FROM DailyMaxExperience
+    ),
+    TotalGains AS (
+        SELECT
+            playfabid,
+            SUM(daily_gain) AS total_gain
+        FROM DailyGains
+        WHERE daily_gain IS NOT NULL
+        GROUP BY playfabid
+        ORDER BY total_gain DESC
+        LIMIT 250
+    )
+    SELECT
+        TotalGains.playfabid,
+        total_gain
+    FROM TotalGains
+    """
+
+    with connection.cursor() as cursor:
+        cursor.execute(sql_query)
+        results = cursor.fetchall()
+
+        # Convert list of tuples to list of dictionaries
+        column_names = [col[0] for col in cursor.description]
+        leaderboard_data = [
+            dict(zip(column_names, row))
+            for row in results
+        ]
+
+    return leaderboard_data
+
+# New view for the top gainers leaderboard
+def top_gainers_leaderboard(request):
+    page = int(request.GET.get('page', 1))  # Default to page 1
+    time_period = request.GET.get('time_period', '7')  # Default to 7 days
+    table_name = request.GET.get('table_name', 'experienceknight')  # Default to 'experienceknight'
+    
+    # Validate time_period and table_name against a pre-set list to prevent SQL injection
+    valid_time_periods = ['2', '7', '14', '30']
+    valid_table_names = [
+        "globalxp", "playtime", "playtimeex", "dailyplaytime", "experiencearcher", 
+        "experiencefootman", "experiencevanguard", "experienceknight", "experienceweaponmorningstar", 
+        "experienceweaponheavycavalrysword", "experienceweaponthrowingmallet", "experienceweapondagger", 
+        "experienceweaponmediumshield", "experienceweaponheavyshield", "experienceweaponwarbow", 
+        "experienceweaponshovel", "experienceweaponquarterstaff", "experienceweaponrapier", 
+        "experienceweaponwarhammer", "experienceweaponthrowingaxe", "experienceweaponexecutionersaxe", 
+        "experienceweaponcrossbow", "experienceweaponpolehammer", "experienceweaponaxe", 
+        "experienceweaponheavymace", "experienceweaponbow", "experienceweaponknife", 
+        "experienceweaponpickaxe", "experienceweaponcudgel", "experienceweaponfalchion", 
+        "experienceweaponwarclub", "experienceweaponspear", "experienceweaponshortsword", 
+        "experienceweapononehandedspear", "experienceweaponlance", "experienceweaponbattleaxe", 
+        "experienceweaponglaive", "experienceweaponmace", "experienceweaponhalberd", 
+        "experienceweaponhighlandsword", "experienceweaponpoleaxe", "experienceweaponkatars", 
+        "experienceweaponmaul", "experienceweapondaneaxe", "experienceweaponbastardsword", 
+        "experienceweaponjavelin", "experienceweapongreatsword", "experienceweaponsword", 
+        "experienceweaponsledgehammer", "experienceweaponlightshield", "experienceweapontwohandedhammer", 
+        "experienceweaponhatchet", "experienceweaponwaraxe", "experienceweaponthrowingknife", 
+        "experienceweaponmesser", "experienceweaponheavycrossbow"
+    ]
+
+    
+    if time_period not in valid_time_periods or table_name not in valid_table_names:
+        return render(request, 'error_page.html', {'message': 'Invalid parameters'})
+    
+    leaderboard_data = get_top_gainers(time_period, table_name, page)
+
+    # Fetch the most_common_alias for each playfabid
+    for entry in leaderboard_data:
+        playfabid = entry['playfabid']
+        player = Player.objects.get(playfabid=playfabid)
+        entry['most_common_alias'] = player.most_common_alias()
+
+    context = {'leaderboard_data': leaderboard_data}
+    return render(request, 'leaderboards/top_gainers_leaderboard.html', context)
 
 def index(request):
     latest_entry = ChivstatsSumstats.objects.latest('serial_date')
