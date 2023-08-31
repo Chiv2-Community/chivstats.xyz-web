@@ -41,6 +41,13 @@ DEBUG_TOOLBAR_CONFIG = {
     'SHOW_TOOLBAR_CALLBACK': lambda r: DEBUG  # Allows toolbar to be visible
 }
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': '/tmp/chivstats_cache',
+    }
+}
+
 # Application definition
 
 INSTALLED_APPS = [

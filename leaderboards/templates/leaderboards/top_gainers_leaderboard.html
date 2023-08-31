@@ -1,116 +1,48 @@
 {% extends 'leaderboards/base.html' %}
 
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-EQG3BMRF63"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-EQG3BMRF63');
-</script>
-
 {% block content %}
-<h1>Top Gainers Leaderboard</h1>
+<h1>Metastats: Top Gainers Leaderboards</h1>
+<br>This is a test leaderboard system, a sum of the total score gained per rolling time period. Initial queries may take ~30sec. 
 <br>
-<p>Latest update: {{ latest_update|date:"F j, Y, P T" }}</p>
-<br>
-
+{% if error_message %}
+    <div class="alert alert-danger" role="alert">
+        {{ error_message }}
+    </div>
+{% endif %}
 <!-- Form for selecting time period and table name -->
+<br>
 <form method="get" action="">
-    <label for="time_period">Select Time Period:</label>
-    <select name="time_period" id="time_period">
-        <option value="7">7 days</option>
-        <option value="14">14 days</option>
-        <option value="30">30 days</option>
-        <option value="30">2 days</option>
-    </select>
-
-    <label for="table_name">Select Table:</label>
+    <label for="table_name">Leaderboard:</label>
     <select name="table_name">
-            <option value="globalxp">Global XP</option>
-            <option value="playtime">Playtime</option>
-            <option value="playtimeex">Playtime Ex</option>
-            <option value="dailyplaytime">Daily Playtime</option>
-            <option value="experiencearcher">Experience Archer</option>
-            <option value="experiencefootman">Experience Footman</option>
-            <option value="experiencevanguard">Experience Vanguard</option>
-            <option value="experienceknight">Experience Knight</option>
-            <option value="experienceweaponmorningstar">Experience Weapon Morning Star</option>
-            <option value="experienceweaponheavycavalrysword">Experience Weapon Heavy Cavalry Sword</option>
-            <option value="experienceweaponthrowingmallet">Experience Weapon Throwing Mallet</option>
-            <option value="experienceweapondagger">Experience Weapon Dagger</option>
-            <option value="experienceweaponmediumshield">Experience Weapon Medium Shield</option>
-            <option value="experienceweaponheavyshield">Experience Weapon Heavy Shield</option>
-            <option value="experienceweaponwarbow">Experience Weapon War Bow</option>
-            <option value="experienceweaponshovel">Experience Weapon Shovel</option>
-            <option value="experienceweaponquarterstaff">Experience Weapon Quarterstaff</option>
-            <option value="experienceweaponrapier">Experience Weapon Rapier</option>
-            <option value="experienceweaponwarhammer">Experience Weapon War Hammer</option>
-            <option value="experienceweaponthrowingaxe">Experience Weapon Throwing Axe</option>
-            <option value="experienceweaponexecutionersaxe">Experience Weapon Executioner's Axe</option>
-            <option value="experienceweaponcrossbow">Experience Weapon Crossbow</option>
-            <option value="experienceweaponpolehammer">Experience Weapon Pole Hammer</option>
-            <option value="experienceweaponaxe">Experience Weapon Axe</option>
-            <option value="experienceweaponheavymace">Experience Weapon Heavy Mace</option>
-            <option value="experienceweaponbow">Experience Weapon Bow</option>
-            <option value="experienceweaponknife">Experience Weapon Knife</option>
-            <option value="experienceweaponpickaxe">Experience Weapon Pick Axe</option>
-            <option value="experienceweaponcudgel">Experience Weapon Cudgel</option>
-            <option value="experienceweaponfalchion">Experience Weapon Falchion</option>
-            <option value="experienceweaponwarclub">Experience Weapon War Club</option>
-            <option value="experienceweaponspear">Experience Weapon Spear</option>
-            <option value="experienceweaponshortsword">Experience Weapon Short Sword</option>
-            <option value="experienceweapononehandedspear">Experience Weapon One-Handed Spear</option>
-            <option value="experienceweaponlance">Experience Weapon Lance</option>
-            <option value="experienceweaponbattleaxe">Experience Weapon Battle Axe</option>
-            <option value="experienceweaponglaive">Experience Weapon Glaive</option>
-            <option value="experienceweaponmace">Experience Weapon Mace</option>
-            <option value="experienceweaponhalberd">Experience Weapon Halberd</option>
-            <option value="experienceweaponhighlandsword">Experience Weapon Highland Sword</option>
-            <option value="experienceweaponpoleaxe">Experience Weapon Pole Axe</option>
-            <option value="experienceweaponkatars">Experience Weapon Katars</option>
-            <option value="experienceweaponmaul">Experience Weapon Maul</option>
-            <option value="experienceweapondaneaxe">Experience Weapon Dane Axe</option>
-            <option value="experienceweaponbastardsword">Experience Weapon Bastard Sword</option>
-            <option value="experienceweaponjavelin">Experience Weapon Javelin</option>
-            <option value="experienceweapongreatsword">Experience Weapon Greatsword</option>
-            <option value="experienceweaponsword">Experience Weapon Sword</option>
-            <option value="experienceweaponsledgehammer">Experience Weapon Sledge Hammer</option>
-            <option value="experienceweaponlightshield">Experience Weapon Light Shield</option>
-            <option value="experienceweapontwohandedhammer">Experience Weapon Two-Handed Hammer</option>
-            <option value="experienceweaponhatchet">Experience Weapon Hatchet</option>
-            <option value="experienceweaponwaraxe">Experience Weapon War Axe</option>
-            <option value="experienceweaponthrowingknife">Experience Weapon Throwing Knife</option>
-            <option value="experienceweaponmesser">Experience Weapon Messer</option>
-            <option value="experienceweaponheavycrossbow">Experience Weapon Heavy Crossbow</option>
-        </select>      
-
-    <input type="submit" value="Update Leaderboard">
+        {% for table, friendly_name in table_names %}
+        <option value="{{ table }}" {% if table == table_name %}selected{% endif %}>{{ friendly_name }}</option>
+        {% endfor %}
+    </select>
+    <label for="time_period">  Rolling Timeframe:</label>
+    <select name="time_period" id="time_period">
+        <option value="2" {% if time_period == "2" %}selected{% endif %}>2 days</option>
+        <option value="7" {% if time_period == "7" %}selected{% endif %}>7 days</option>
+        <option value="14" {% if time_period == "14" %}selected{% endif %}>14 days</option>
+        <option value="30" {% if time_period == "30" %}selected{% endif %}>30 days</option>
+    </select>
+    
+    <input type="submit" value="Update Leaderboard View">
 </form>
 
 <br>
-
-<!-- Pagination at the top -->
-<div class="d-flex justify-content-center">
-    {% if page_obj.has_previous %}
-        <a class="btn btn-outline-info" href="?page=1">First</a>
-        <a class="btn btn-outline-info" href="?page={{ page_obj.previous_page_number }}">Previous</a>
+<h4>{% for table, friendly_name in table_names %}
+    {% if table == table_name %}
+        <b>{{ friendly_name }}</b>
     {% endif %}
-    <span class="current-page d-inline-block h-100 pl-4 text-secondary"> Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-    {% if page_obj.has_next %}
-        <a class="btn btn-outline-info" href="?page={{ page_obj.next_page_number }}">Next</a>
-        <a class="btn btn-outline-info" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
-    {% endif %}
-</div>
-
+{% endfor %} 
+in the previous <b>{{ time_period }} days</b>.</h4>
 <!-- Table for displaying leaderboard -->
 <table class="table table-striped" id="leaderboardTable">
     <thead>
         <tr>
-            <th>Position</th>
-            <th>PlayFab ID</th>
-            <th>Total Gain</th>
+            <th>Rank</th>
+            <th>Player</th>
+            <th>Raw Gain</th>
         </tr>
     </thead>
     <tbody>
@@ -123,16 +55,4 @@
     {% endfor %}
     </tbody>
 </table>
-<!-- Pagination at the bottom -->
-<div class="d-flex justify-content-center">
-    {% if page_obj.has_previous %}
-        <a class="btn btn-outline-info" href="?page=1">First</a>
-        <a class="btn btn-outline-info" href="?page={{ page_obj.previous_page_number }}">Previous</a>
-    {% endif %}
-    <span class="current-page d-inline-block h-100 pl-4 text-secondary"> Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-    {% if page_obj.has_next %}
-        <a class="btn btn-outline-info" href="?page={{ page_obj.next_page_number }}">Next</a>
-        <a class="btn btn-outline-info" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
-    {% endif %}
-</div>
 {% endblock %}

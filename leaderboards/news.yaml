@@ -1,3 +1,5 @@
+- date: 2023-08-30
+  content: Initial creation of a metastat ranking, <a href="top_gainers">Top Gainers</a>.
 - date: 2023-08-29
   content: Stats gathering is fully automated, and should be nightly! Initial addition of Playtime Ex, TBS' fix for the integer overflow in Playtime.. news moved to yaml format.
 - date: 2023-08-24

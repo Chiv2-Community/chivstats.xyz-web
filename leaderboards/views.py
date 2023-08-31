@@ -5,11 +5,14 @@ from datetime import timedelta
 
 from django.apps import apps
 from django.core.paginator import Paginator
+from django.core.cache import cache
 from django.db import connection
 from django.db.models import Avg
 from django.db.models import Max
 from django.http import Http404, JsonResponse
 from django.shortcuts import render
+from django.views.decorators.cache import cache_page
+
 from rest_framework import generics
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -89,6 +92,12 @@ def url_to_leaderboard_name(url):
     return formatted_url
 
 def get_top_gainers(time_period, table_name, page=1, items_per_page=50):
+    cache_key = f'top_gainers_{time_period}_{table_name}_{page}_{items_per_page}'  # Create a unique cache key
+    cached_data = cache.get(cache_key)  # Try to get data from the cache
+
+    if cached_data:
+        return cached_data  # If cache exists, return it
+
     offset = (page - 1) * items_per_page
     sql_query = f"""
     WITH DailyMaxExperience AS (
@@ -134,6 +143,7 @@ def get_top_gainers(time_period, table_name, page=1, items_per_page=50):
             dict(zip(column_names, row))
             for row in results
         ]
+    cache.set(cache_key, leaderboard_data, 3600)
 
     return leaderboard_data
 
@@ -146,30 +156,64 @@ def top_gainers_leaderboard(request):
     # Validate time_period and table_name against a pre-set list to prevent SQL injection
     valid_time_periods = ['2', '7', '14', '30']
     valid_table_names = [
-        "globalxp", "playtime", "playtimeex", "dailyplaytime", "experiencearcher", 
-        "experiencefootman", "experiencevanguard", "experienceknight", "experienceweaponmorningstar", 
-        "experienceweaponheavycavalrysword", "experienceweaponthrowingmallet", "experienceweapondagger", 
-        "experienceweaponmediumshield", "experienceweaponheavyshield", "experienceweaponwarbow", 
-        "experienceweaponshovel", "experienceweaponquarterstaff", "experienceweaponrapier", 
-        "experienceweaponwarhammer", "experienceweaponthrowingaxe", "experienceweaponexecutionersaxe", 
-        "experienceweaponcrossbow", "experienceweaponpolehammer", "experienceweaponaxe", 
-        "experienceweaponheavymace", "experienceweaponbow", "experienceweaponknife", 
-        "experienceweaponpickaxe", "experienceweaponcudgel", "experienceweaponfalchion", 
-        "experienceweaponwarclub", "experienceweaponspear", "experienceweaponshortsword", 
-        "experienceweapononehandedspear", "experienceweaponlance", "experienceweaponbattleaxe", 
-        "experienceweaponglaive", "experienceweaponmace", "experienceweaponhalberd", 
-        "experienceweaponhighlandsword", "experienceweaponpoleaxe", "experienceweaponkatars", 
-        "experienceweaponmaul", "experienceweapondaneaxe", "experienceweaponbastardsword", 
-        "experienceweaponjavelin", "experienceweapongreatsword", "experienceweaponsword", 
-        "experienceweaponsledgehammer", "experienceweaponlightshield", "experienceweapontwohandedhammer", 
-        "experienceweaponhatchet", "experienceweaponwaraxe", "experienceweaponthrowingknife", 
-        "experienceweaponmesser", "experienceweaponheavycrossbow"
+        ("globalxp", "Global XP"),
+        ("playtime", "Playtime"),
+        ("playtimeex", "Playtime Ex"),
+        ("dailyplaytime", "Daily Playtime"),
+        ("experiencearcher", "Experience Archer"),
+        ("experiencefootman", "Experience Footman"),
+        ("experiencevanguard", "Experience Vanguard"),
+        ("experienceknight", "Experience Knight"),
+        ("experienceweaponmorningstar", "Experience Weapon Morning Star"),
+        ("experienceweaponheavycavalrysword", "Experience Weapon Heavy Cavalry Sword"),
+        ("experienceweaponthrowingmallet", "Experience Weapon Throwing Mallet"),
+        ("experienceweapondagger", "Experience Weapon Dagger"),
+        ("experienceweaponmediumshield", "Experience Weapon Medium Shield"),
+        ("experienceweaponheavyshield", "Experience Weapon Heavy Shield"),
+        ("experienceweaponwarbow", "Experience Weapon War Bow"),
+        ("experienceweaponshovel", "Experience Weapon Shovel"),
+        ("experienceweaponquarterstaff", "Experience Weapon Quarterstaff"),
+        ("experienceweaponrapier", "Experience Weapon Rapier"),
+        ("experienceweaponwarhammer", "Experience Weapon War Hammer"),
+        ("experienceweaponthrowingaxe", "Experience Weapon Throwing Axe"),
+        ("experienceweaponexecutionersaxe", "Experience Weapon Executioner's Axe"),
+        ("experienceweaponcrossbow", "Experience Weapon Crossbow"),
+        ("experienceweaponpolehammer", "Experience Weapon Pole Hammer"),
+        ("experienceweaponaxe", "Experience Weapon Axe"),
+        ("experienceweaponheavymace", "Experience Weapon Heavy Mace"),
+        ("experienceweaponbow", "Experience Weapon Bow"),
+        ("experienceweaponknife", "Experience Weapon Knife"),
+        ("experienceweaponpickaxe", "Experience Weapon Pick Axe"),
+        ("experienceweaponcudgel", "Experience Weapon Cudgel"),
+        ("experienceweaponfalchion", "Experience Weapon Falchion"),
+        ("experienceweaponwarclub", "Experience Weapon War Club"),
+        ("experienceweaponspear", "Experience Weapon Spear"),
+        ("experienceweaponshortsword", "Experience Weapon Short Sword"),
+        ("experienceweapononehandedspear", "Experience Weapon One-Handed Spear"),
+        ("experienceweaponlance", "Experience Weapon Lance"),
+        ("experienceweaponbattleaxe", "Experience Weapon Battle Axe"),
+        ("experienceweaponglaive", "Experience Weapon Glaive"),
+        ("experienceweaponmace", "Experience Weapon Mace"),
+        ("experienceweaponhalberd", "Experience Weapon Halberd"),
+        ("experienceweaponhighlandsword", "Experience Weapon Highland Sword"),
+        ("experienceweaponpoleaxe", "Experience Weapon Pole Axe"),
+        ("experienceweaponkatars", "Experience Weapon Katars"),
+        ("experienceweaponmaul", "Experience Weapon Maul"),
+        ("experienceweapondaneaxe", "Experience Weapon Dane Axe"),
+        ("experienceweaponbastardsword", "Experience Weapon Bastard Sword"),
+        ("experienceweaponjavelin", "Experience Weapon Javelin"),
+        ("experienceweapongreatsword", "Experience Weapon Greatsword"),
+        ("experienceweaponsword", "Experience Weapon Sword"),
+        ("experienceweaponsledgehammer", "Experience Weapon Sledge Hammer"),
+        ("experienceweaponlightshield", "Experience Weapon Light Shield"),
+        ("experienceweapontwohandedhammer", "Experience Weapon Two-Handed Hammer"),
+        ("experienceweaponhatchet", "Experience Weapon Hatchet"),
+        ("experienceweaponwaraxe", "Experience Weapon War Axe"),
+        ("experienceweaponthrowingknife", "Experience Weapon Throwing Knife"),
+        ("experienceweaponmesser", "Experience Weapon Messer"),
+        ("experienceweaponheavycrossbow", "Experience Weapon Heavy Crossbow")
     ]
-
-    
-    if time_period not in valid_time_periods or table_name not in valid_table_names:
-        return render(request, 'error_page.html', {'message': 'Invalid parameters'})
-    
+   
     leaderboard_data = get_top_gainers(time_period, table_name, page)
 
     # Fetch the most_common_alias for each playfabid
@@ -178,7 +222,20 @@ def top_gainers_leaderboard(request):
         player = Player.objects.get(playfabid=playfabid)
         entry['most_common_alias'] = player.most_common_alias()
 
-    context = {'leaderboard_data': leaderboard_data}
+    error_message = None  # Initialize error_message as None (i.e., no error)
+    
+    if time_period not in valid_time_periods or table_name not in [x[0] for x in valid_table_names]:
+        error_message = 'Invalid parameters'
+    
+    context = {
+        'leaderboard_data': leaderboard_data,
+        'leaderboards': leaderboard_list_of_dict,
+        'time_period': time_period,
+        'table_name': table_name,
+        'table_names': valid_table_names,
+        'error_message': error_message  # Add the error_message to the context
+    }
+    
     return render(request, 'leaderboards/top_gainers_leaderboard.html', context)
 
 def index(request):
