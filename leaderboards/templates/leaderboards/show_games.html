@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chivalry 2 Server List Data</title>
+    <script>
+        function sortTable(n, tableId) {
+    var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+    table = document.getElementById(tableId);
+    switching = true;
+    dir = "asc";
+    while (switching) {
+        switching = false;
+        rows = table.rows;
+        for (i = 1; i < (rows.length - 1); i++) {
+            shouldSwitch = false;
+            x = rows[i].getElementsByTagName("TD")[n];
+            y = rows[i + 1].getElementsByTagName("TD")[n];
+            // Check if the two rows should switch place, based on the direction, asc or desc:
+            if (!isNaN(x.innerHTML) && !isNaN(y.innerHTML)) {
+                // If numerical values
+                if (dir == "asc") {
+                    if (Number(x.innerHTML) > Number(y.innerHTML)) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                } else if (dir == "desc") {
+                    if (Number(x.innerHTML) < Number(y.innerHTML)) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+            } else {
+                // If string values
+                if (dir == "asc") {
+                    if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                } else if (dir == "desc") {
+                    if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+            }
+        }
+        if (shouldSwitch) {
+            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+            switching = true;
+            switchcount++;
+        } else {
+            if (switchcount == 0 && dir == "asc") {
+                dir = "desc";
+                switching = true;
+            }
+        }
+    }
+}
+
+    </script>
+    
+</head>
+<body>
+
+<h1>Current Chivalry 2 Server List Games</h1>
+
+This data is updated every N minutes. Click a column to sort on it.<br>
+Game Count: {{ data.Data.GameCount }}<br>
+Player Count: {{ data.Data.PlayerCount }}><br>
+
+<table border="1" id="sortableTable">
+    <tr>
+        <th onclick="sortTable(0, 'sortableTable')">Lobby Id</th>
+        <th onclick="sortTable(1, 'sortableTable')">Region</th>
+        <th onclick="sortTable(2, 'sortableTable')">Server Name</th>
+        <th onclick="sortTable(3, 'sortableTable')">Max Players</th>
+        <th onclick="sortTable(4, 'sortableTable')">Connected Players</th>
+        <th onclick="sortTable(5, 'sortableTable')">Game Mode</th>
+        <th onclick="sortTable(6, 'sortableTable')">Map Name</th>
+        <th onclick="sortTable(7, 'sortableTable')">Last Heartbeat</th>
+        <th onclick="sortTable(8, 'sortableTable')">Server IPV4 Address</th>
+        <th onclick="sortTable(9, 'sortableTable')">Server Port</th>
+        <th onclick="sortTable(10, 'sortableTable')">OFFICIAL_b</th>
+        <th onclick="sortTable(11, 'sortableTable')">Platform_s</th>
+        <th onclick="sortTable(12, 'sortableTable')">FFA_b</th>
+        <th onclick="sortTable(13, 'sortableTable')">PingPort_i</th>
+        <th onclick="sortTable(14, 'sortableTable')">QueryPort_i</th>
+        <th onclick="sortTable(15, 'sortableTable')">T0_c</th>
+        <th onclick="sortTable(16, 'sortableTable')">pp_b</th>
+        <th onclick="sortTable(17, 'sortableTable')">t1_c</th>
+        <th onclick="sortTable(18, 'sortableTable')">MTIM_i</th>
+    </tr>
+{% for game in data.Data.Games %}
+        <tr>
+            <td>{{ game.LobbyId }}</td>
+            <td>{{ game.Tags.Region_s }}</td>
+            <td>{{ game.Tags.ServerName_s }}</td>
+            <td>{{ game.MaxPlayers }}</td>
+            <td>{{ game.PlayerUserIds|length }}</td>
+            <td>{{ game.GameMode }}</td>
+            <td>{{ game.Tags.MapName_s }}</td>
+            <td>{{ game.LastHeartbeat }}</td>
+            <td>{{ game.ServerIPV4Address }}</td>
+            <td>{{ game.ServerPort }}</td>
+            <!-- Add tag values here -->
+            <td>{{ game.Tags.OFFICIAL_b }}</td>
+            <td>{{ game.Tags.Platform_s }}</td>
+            <td>{{ game.Tags.FFA_b }}</td>
+
+            <td>{{ game.Tags.PingPort_i }}</td>
+            <td>{{ game.Tags.QueryPort_i }}</td>
+            <td>{{ game.Tags.T0_c }}</td>
+            <td>{{ game.Tags.pp_b }}</td>
+            <td>{{ game.Tags.t1_c }}</td>
+            <td>{{ game.Tags.MTIM_i }}</td>
+        </tr>
+{% endfor %}
+</table>
+</body>
+</html>

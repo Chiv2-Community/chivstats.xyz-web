@@ -9,6 +9,7 @@ urlpatterns = [
     path('player_search/', views.player_search, name='player_search'),
     path('top_players/', views.top_players_by_playtime, name='top_players'),
     path('top_gainers/', views.top_gainers_leaderboard, name='top_gainers_leaderboard'),
+    path('show_games/', views.show_games, name='show_games'),
     path('go_touch_grass/', views.go_touch_grass_leaderboard, name='go_touch_grass_leaderboard'),
     path('player/<str:playfabid>/', views.player_profile, name='player_profile'),
     path('tattle/', views.tattle, name='tattle'),

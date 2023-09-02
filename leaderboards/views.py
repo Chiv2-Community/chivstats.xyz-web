@@ -1,4 +1,4 @@
-import re
+import re, json
 from copy import copy
 from datetime import datetime
 from datetime import timedelta
@@ -32,6 +32,12 @@ leaderboards = copy(leaderboard_classes);
 leaderboards.sort(key=organize_sidebar);
 #list of dicts of url and readable text
 leaderboard_list_of_dict = create_leaderboard_list()
+
+def show_games(request):
+    with open('/tmp/currentgames', 'r') as f:
+        data = json.load(f)
+    #print(data)
+    return render(request, 'leaderboards/show_games.html', {'data': data})
 
 def get_leaderboards_context():
     return {'leaderboards': leaderboard_list_of_dict}
