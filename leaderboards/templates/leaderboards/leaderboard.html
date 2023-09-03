@@ -56,7 +56,6 @@
             <th>Position</th>
             <th>Display Name</th>
             <th>Stat Value</th>
-            <th>Player ID</th>
         </tr>
     </thead>
     <tbody>
@@ -73,11 +72,12 @@
                         {{ forloop.counter|add:page_obj.start_index|add:"-1" }}
                     {% endif %}
                 </td>
-                <td class="displayName">{{ entry.playfabid.most_common_alias }}</td>
-                <td>{{ entry.stat_value }}</td>
-                <td>
-                    <a href="{% url 'leaderboards:player_profile' entry.playfabid.playfabid %}">{{ entry.playfabid.playfabid }}</a>
+                <td class="displayName">
+                    <a href="{% url 'leaderboards:player_profile' entry.playfabid.playfabid %}">
+                        {{ entry.playfabid.most_common_alias }}
+                    </a>
                 </td>
+                <td>{{ entry.stat_value }}</td>
             </tr>
         {% endfor %}
     </tbody>
