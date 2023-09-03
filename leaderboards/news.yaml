@@ -1,3 +1,5 @@
+- date: 2023-09-03
+  content: Initial creation of a new view, the in-game <a href="show_games">Server List</a>.
 - date: 2023-08-30
   content: Initial creation of a metastat ranking, <a href="top_gainers">Top Gainers</a>.
 - date: 2023-08-29
