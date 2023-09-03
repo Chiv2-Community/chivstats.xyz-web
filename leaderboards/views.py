@@ -33,11 +33,38 @@ leaderboards.sort(key=organize_sidebar);
 #list of dicts of url and readable text
 leaderboard_list_of_dict = create_leaderboard_list()
 
+from geoip2.database import Reader
+from geoip2.errors import AddressNotFoundError, GeoIP2Error
+
+
 def show_games(request):
     with open('/tmp/currentgames', 'r') as f:
         data = json.load(f)
-    #print(data)
-    return render(request, 'leaderboards/show_games.html', {'data': data})
+
+    reader = Reader('/home/webchiv/GeoLite2-City.mmdb')
+
+    for game in data['Data']['Games']:
+        try:
+            response = reader.city(game['ServerIPV4Address'])
+            game['Location'] = f"{response.city.name}, {response.subdivisions.most_specific.iso_code}"
+        except AddressNotFoundError:
+            game['Location'] = "Unknown"
+        except GeoIP2Error:
+            game['Location'] = "Error"
+
+    populated_server_count = 0
+    for game in data['Data']['Games']:
+        if len(game['PlayerUserIds']) > 0:  # Adjust this condition based on how you determine if a server is populated
+            populated_server_count += 1
+
+    # Include the leaderboards and the populated_server_count in the context
+    context = {
+        'data': data,
+        'leaderboards': leaderboard_list_of_dict,  # This is the line you'll want to add
+        'populated_server_count': populated_server_count  # Add this line to include the populated_server_count
+    }
+
+    return render(request, 'leaderboards/show_games.html', context)
 
 def get_leaderboards_context():
     return {'leaderboards': leaderboard_list_of_dict}
