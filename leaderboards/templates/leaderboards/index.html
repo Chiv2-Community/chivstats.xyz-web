@@ -15,16 +15,15 @@
     <h2> Chivalry 2 Statistics & Leaderboards</h2>
     <p>
         <br>
-        Most Recent Update: {{ latest_update|date:"F j, Y" }}<br><br>
-        Chivalry 2 Unique Players: {{ latest_entry.unique_players|format_with_commas }}<br>
-        Recent Daily unique player count: {{ latest_entry.daily_players|format_with_commas }}<br>                  
+        Most Recent Update: {{ latest_update|date:"F j, Y" }}<br>
+        All Time Chivalry 2 Unique Players: {{ latest_entry.unique_players|format_with_commas }}<br>
+        Recent Daily Max Total Players: {{ latest_entry.daily_players|format_with_commas }}<br>                  
         <br>
         This site presents player statistics derived from official Chivalry 2 server sources. The gathering process is
         time-consuming and updates are done in batches. Please note that the available data is limited and certain
         restrictions apply. At present, updates are <b>~daily</b> targeted at <b>100,000</b> top players..
         <br><br>
-        Assistance with the web frontend and the creation of an aesthetically pleasing UI would be appreciated. If you
-        or someone you know possesses the required skills, please reach out.
+        Assistance with the web frontend and the creation of an aesthetically pleasing UI would be appreciated. The frontend is open source and available on <a href="https://github.com/Chiv2-Community/chivstats.xyz-web/">github(Chiv2-Community/chivstats.xyz-web)</a>.
         <br><br>
         - Gimmic
         <br><br><br>
@@ -38,14 +37,6 @@
         {% endfor %}
     </ul>
     <br>
-    <br>
-    Todo: <br>
-    - theme/styling/graphics.<br>
-    - improved search features.<br>
-    - histogram/changes-over-time.<br>
-    - Top N multiview leaderboards.<br>
-    - Datapoint/serial browser.<br>
-
 </div>
 {% endblock %}
 

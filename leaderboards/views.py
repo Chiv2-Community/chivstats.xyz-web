@@ -1,26 +1,23 @@
 import re, json
 from copy import copy
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from django.apps import apps
 from django.core.paginator import Paginator
 from django.core.cache import cache
 from django.db import connection
-from django.db.models import Avg
-from django.db.models import Max
+from django.db.models import Avg, Max
 from django.http import Http404, JsonResponse
 from django.shortcuts import render
 from django.views.decorators.cache import cache_page
 
-from rest_framework import generics
-from rest_framework import status
+from rest_framework import generics, status
 from rest_framework.decorators import api_view
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
 from leaderboards import models
-from .models import Leaderboard, Player, HourlyPlayerCount
+from .models import Leaderboard, Player, HourlyPlayerCount, ChivstatsSumstats, DailyPlaytime, leaderboard_classes
 # import the leaderboard List since it should be defined just in one place
 from .models import (leaderboard_classes, LatestLeaderboard, ChivstatsSumstats)
 from .serializers import (LatestLeaderboardSerializer, PlayerSerializer)
@@ -35,6 +32,24 @@ leaderboard_list_of_dict = create_leaderboard_list()
 
 from geoip2.database import Reader
 from geoip2.errors import AddressNotFoundError, GeoIP2Error
+
+def get_meta_sumstats(request):
+    latest_entry = ChivstatsSumstats.objects.order_by('-serial_date').first()
+
+    # Initialize a dictionary to hold the context
+    context = {
+        'latest_entry': latest_entry,
+        'unique_players': latest_entry.unique_players,
+        'daily_players': latest_entry.daily_players,
+    }
+
+    # Loop through the leaderboard classes to fetch the latest data for each
+    for class_name in leaderboard_classes:
+        ModelClass = apps.get_model('leaderboards', class_name)
+        latest_data = ModelClass.objects.order_by('-serialnumber').first()
+        context[f"{class_name.lower()}_latest"] = latest_data.stat_value if latest_data else None
+
+    return render(request, 'leaderboards/meta_sumstats.html', context)
 
 
 def show_games(request):

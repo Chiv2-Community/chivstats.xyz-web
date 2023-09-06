@@ -1,0 +1,41 @@
+{% extends "leaderboards/base.html" %}
+
+{% block content %}
+<!-- Chart.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
+
+<canvas id="classPieChart" width="400" height="200"></canvas>
+<canvas id="weaponBarChart" width="400" height="200"></canvas>
+
+<script>
+    fetch('/leaderboards/api/meta-sumstats/')
+        .then(response => response.json())
+        .then(data => {
+            // Pie Chart for Classes
+            const pieCtx = document.getElementById('classPieChart').getContext('2d');
+            new Chart(pieCtx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(data.class_scores),
+                    datasets: [{
+                        data: Object.values(data.class_scores),
+                        backgroundColor: ['red', 'blue', 'green', 'yellow']
+                    }]
+                }
+            });
+
+            // Bar Chart for Weapons
+            const barCtx = document.getElementById('weaponBarChart').getContext('2d');
+            new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(data.weapon_scores),
+                    datasets: [{
+                        data: Object.values(data.weapon_scores),
+                        backgroundColor: 'blue'
+                    }]
+                }
+            });
+        });
+</script>
+{% endblock %}

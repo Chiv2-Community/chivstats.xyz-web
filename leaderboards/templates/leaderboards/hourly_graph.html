@@ -15,18 +15,48 @@
         .then(response => response.json())
         .then(data => {
             const ctx = document.getElementById('hourlyPlayerCountGraph').getContext('2d');
-            const labels = data.map(entry => moment.utc(entry.timestamp_hour).local().format('MMM D, YYYY h:mm A z'));  // Convert UTC to local time and format it
-            const values = data.map(entry => entry.player_count);
-            const deltas = values.map((value, index, array) => index === 0 ? 0 : value - array[index - 1]);
+
+            const originalLabels = data.map(entry => moment.utc(entry.timestamp_hour).local().format('MMM D, YYYY h:mm A z'));  // Convert UTC to local time and format it
+            const originalCumulativeValues = data.map(entry => entry.player_count);
+
+            const tempLabels = [];
+            const tempCumulativeValues = [];
+            const tempHourlyValues = [];
+
+            for (let i = 0; i < originalCumulativeValues.length; i++) {
+                if (i == 0) {
+                    tempHourlyValues.push(originalCumulativeValues[i]);
+                    tempLabels.push(originalLabels[i]);
+                    tempCumulativeValues.push(originalCumulativeValues[i]);
+                } else {
+                    let diff = originalCumulativeValues[i] - originalCumulativeValues[i - 1];
+                    // If the difference is not negative (indicating a reset), push the values to the temporary arrays
+                    if (diff >= 0) {
+                        tempHourlyValues.push(diff);
+                        tempLabels.push(originalLabels[i]);
+                        tempCumulativeValues.push(originalCumulativeValues[i]);
+                    }
+                }
+            }
+
+            // Print values to console for inspection
+            console.log("Cumulative Values:", tempCumulativeValues);
+            console.log("Hourly Values:", tempHourlyValues);
 
             const chart = new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: labels,
+                    labels: tempLabels,
                     datasets: [{
                         label: 'Cumulative Hourly Player count',
-                        data: values,
+                        data: tempCumulativeValues,
                         borderColor: 'rgba(75, 192, 192, 1)',
+                        fill: false,
+                        hidden: true
+                    }, {
+                        label: 'Hourly Player count',
+                        data: tempHourlyValues,
+                        borderColor: 'rgba(255, 99, 132, 1)',
                         fill: false
                     }]
                 },
@@ -44,25 +74,27 @@
                             distribution: 'linear'
                         }
                     },
-                    animation: {
-    onComplete: function() {
-        const ctx = chart.ctx;
-        ctx.fillStyle = 'black';  // Set text color to black
-        ctx.font = Chart.helpers.fontString(Chart.defaults.global.defaultFontSize, 'bold', Chart.defaults.global.defaultFontFamily);  // Set font to bold
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
-
-        chart.data.datasets.forEach(function(dataset, i) {
-            const meta = chart.getDatasetMeta(i);
-            meta.data.forEach(function(bar, index) {
-                const delta = deltas[index];
-                const deltaText = delta >= 0 ? `+${delta}` : `${delta}`;
-                ctx.fillText(deltaText, bar._model.x, bar._model.y - 5);
-            });
-        });
-    }
-}
-
+                    tooltips: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(tooltipItem, data) {
+                                var label = data.datasets[tooltipItem.datasetIndex].label || '';
+                                
+                                if (label) {
+                                    label += ': ';
+                                }
+                                label += tooltipItem.yLabel;
+                                
+                                if (tooltipItem.datasetIndex === 0) {
+                                    const delta = tooltipItem.index === 0 ? 0 : data.datasets[0].data[tooltipItem.index] - data.datasets[0].data[tooltipItem.index - 1];
+                                    label += ` (Δ: ${delta})`;
+                                }
+                                
+                                return label;
+                            }
+                        }
+                    }
                 }
             });
         });
