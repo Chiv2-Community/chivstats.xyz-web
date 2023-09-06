@@ -39,9 +39,29 @@
                 }
             }
 
+            // Calculate the 7-point moving average
+            const movingAverageValues = [];
+            for (let i = 0; i < tempHourlyValues.length; i++) {
+                if (i < 3 || i > tempHourlyValues.length - 4) {
+                    movingAverageValues.push(tempHourlyValues[i]);  // Use the actual value for the first three and last three data points
+                } else {
+                    const average = (
+                        tempHourlyValues[i - 3] +
+                        tempHourlyValues[i - 2] +
+                        tempHourlyValues[i - 1] +
+                        tempHourlyValues[i] +
+                        tempHourlyValues[i + 1] +
+                        tempHourlyValues[i + 2] +
+                        tempHourlyValues[i + 3]
+                    ) / 7;
+                    movingAverageValues.push(average);
+                }
+            }
+
             // Print values to console for inspection
             console.log("Cumulative Values:", tempCumulativeValues);
             console.log("Hourly Values:", tempHourlyValues);
+            console.log("Moving Average Values:", movingAverageValues);
 
             const chart = new Chart(ctx, {
                 type: 'line',
@@ -58,6 +78,12 @@
                         data: tempHourlyValues,
                         borderColor: 'rgba(255, 99, 132, 1)',
                         fill: false
+                    }, {
+                        label: '7-Point Moving Average',
+                        data: movingAverageValues,
+                        borderColor: 'rgba(153, 102, 255, 1)',  // Darker color for the moving average line
+                        fill: false,
+                        borderDash: [5, 5],  // Dashed line
                     }]
                 },
                 options: {
