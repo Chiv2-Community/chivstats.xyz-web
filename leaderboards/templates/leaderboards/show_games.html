@@ -34,7 +34,6 @@ Players: <b>{{ data.Data.PlayerCount }}</b>  Games: {{ data.Data.GameCount }}  (
       <th onclick="sortTable(5, 'sortableTable')">Game Mode</th>
       <th onclick="sortTable(6, 'sortableTable')">Map Name</th>
       <th onclick="sortTable(8, 'sortableTable')">Location</th>
-      <th onclick="sortTable(9, 'sortableTable')">Server IPV4 Address</th>
       <th onclick="sortTable(10, 'sortableTable')">Server Port</th>
       <th onclick="sortTable(14, 'sortableTable')">PingPort_i</th>
       <th onclick="sortTable(15, 'sortableTable')">QueryPort_i</th>
@@ -57,7 +56,6 @@ Players: <b>{{ data.Data.PlayerCount }}</b>  Games: {{ data.Data.GameCount }}  (
       <td>{{ game.GameMode }}</td>
       <td>{{ game.Tags.MapName_s }}</td>
       <td>{{ game.Location }}</td>
-      <td>{{ game.ServerIPV4Address }}</td>
       <td>{{ game.ServerPort }}</td>
       <td>{{ game.Tags.PingPort_i }}</td>
       <td>{{ game.Tags.QueryPort_i }}</td>
