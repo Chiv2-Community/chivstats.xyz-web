@@ -15,9 +15,38 @@
         .then(response => response.json())
         .then(data => {
             const ctx = document.getElementById('hourlyPlayerCountGraph').getContext('2d');
+            
+            const filledData = [];
+            let currentDate = moment.utc(data[0].timestamp_hour);
 
-            const originalLabels = data.map(entry => moment.utc(entry.timestamp_hour).local().format('MMM D, YYYY h:mm A z'));  // Convert UTC to local time and format it
-            const originalCumulativeValues = data.map(entry => entry.player_count);
+            for (let i = 0; i < data.length; i++) {
+                while (!currentDate.isSame(moment.utc(data[i].timestamp_hour))) {
+                    filledData.push({ timestamp_hour: currentDate.format(), player_count: null });
+                    currentDate.add(1, 'hours');
+                }
+
+                filledData.push(data[i]);
+                currentDate.add(1, 'hours');
+            }
+
+            // Interpolation Logic
+            for (let i = 1; i < filledData.length - 1; i++) {
+                if (filledData[i].player_count === null) {
+                    let j = i - 1;
+                    while (j >= 0 && filledData[j].player_count === null) {
+                        j--;
+                    }
+                    let k = i + 1;
+                    while (k < filledData.length && filledData[k].player_count === null) {
+                        k++;
+                    }
+                    let average = (filledData[j].player_count + filledData[k].player_count) / 2;
+                    filledData[i].player_count = average;
+                }
+            }
+
+            const originalLabels = filledData.map(entry => moment.utc(entry.timestamp_hour).local().format('MMM D, YYYY h:mm A z')); 
+            const originalCumulativeValues = filledData.map(entry => entry.player_count);
 
             const tempLabels = [];
             const tempCumulativeValues = [];
@@ -29,13 +58,28 @@
                     tempLabels.push(originalLabels[i]);
                     tempCumulativeValues.push(originalCumulativeValues[i]);
                 } else {
-                    let diff = originalCumulativeValues[i] - originalCumulativeValues[i - 1];
-                    // If the difference is not negative (indicating a reset), push the values to the temporary arrays
-                    if (diff >= 0) {
+                    if (originalCumulativeValues[i] === null || originalCumulativeValues[i - 1] === null) {
+                        tempHourlyValues.push(null);  // No hourly data for gaps
+                        tempLabels.push(originalLabels[i]);
+                        tempCumulativeValues.push(null);  // No cumulative data for gaps
+                    } else {
+                        let diff = originalCumulativeValues[i] - originalCumulativeValues[i - 1];
+                        // Check if the difference is negative
+                        diff = diff < 0 ? 0 : diff;
                         tempHourlyValues.push(diff);
                         tempLabels.push(originalLabels[i]);
                         tempCumulativeValues.push(originalCumulativeValues[i]);
                     }
+                }
+            }
+            for (let i = 0; i < tempHourlyValues.length; i++) {
+                if (tempHourlyValues[i] === 0) {
+                    tempHourlyValues[i] = null;
+                }
+            }     
+            for (let i = 1; i < tempHourlyValues.length - 1; i++) {
+                if (tempHourlyValues[i] === 0 && tempHourlyValues[i - 1] !== 0 && tempHourlyValues[i + 1] !== 0) {
+                    tempHourlyValues[i] = (tempHourlyValues[i - 1] + tempHourlyValues[i + 1]) / 2;
                 }
             }
 
@@ -57,7 +101,16 @@
                     movingAverageValues.push(average);
                 }
             }
-
+            for (let i = 0; i < movingAverageValues.length; i++) {
+                if (movingAverageValues[i] === 0) {
+                    movingAverageValues[i] = null;
+                }
+            }
+            for (let i = 1; i < movingAverageValues.length - 1; i++) {
+                if (movingAverageValues[i] === 0 && movingAverageValues[i - 1] !== 0 && movingAverageValues[i + 1] !== 0) {
+                    movingAverageValues[i] = (movingAverageValues[i - 1] + movingAverageValues[i + 1]) / 2;
+                }
+            }
             // Print values to console for inspection
             console.log("Cumulative Values:", tempCumulativeValues);
             console.log("Hourly Values:", tempHourlyValues);

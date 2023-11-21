@@ -86,7 +86,7 @@ def get_leaderboards_context():
 
 def get_hourly_player_count(request):
     if request.path.endswith('/api/hourly-player-count/'):
-        data = list(HourlyPlayerCount.objects.values('timestamp_hour', 'player_count'))
+        data = list(HourlyPlayerCount.objects.filter(player_count__gte=0).values('timestamp_hour', 'player_count'))
         return JsonResponse(data, safe=False)
     else:
         context = get_leaderboards_context()  # Get the leaderboards context
@@ -305,7 +305,7 @@ def leaderboard(request, leaderboard_name):
     page_number = request.GET.get('page', 1)
     results_per_page = request.GET.get('results_per_page', 50)
     show_recent_players = request.GET.get('recent_players') == 'on'
-    hard_coded_date = 20230518
+    hard_coded_date = 20231107
 
     try:
         page_number = int(page_number)
