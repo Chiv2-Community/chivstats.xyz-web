@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Merged Playtimes Leaderboard(most recent serial)</title>
+</head>
+<body>
+    <h1>Merged Playtimes Leaderboard(most recent serial)</h1>
+    <table>
+        <tr>
+            <th>PlayFab ID</th>
+            <th>Serial Number</th>
+            <th>Total Playtime</th>
+        </tr>
+        {% for entry in merged_leaderboard %}
+        <div>
+            <a href="{{ entry.profile_url }}">{{ entry.player_name }}</a>
+            <span>Total Playtime: {{ entry.total_playtime }}</span>
+        </div>
+    {% endfor %}
+    
+    </table>
+</body>
+</html>

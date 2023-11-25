@@ -1,0 +1,148 @@
+{% extends "leaderboards/base.html" %}
+{% block content %}
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Form for PlayFab IDs Input -->
+<form action="" method="get">
+    <label for="playfabids">Enter PlayFab IDs (comma-separated):</label>
+    <input type="text" id="playfabids" name="playfabids" placeholder="id1,id2,id3">
+    <button type="submit">Filter</button>
+</form>
+
+<canvas id="playerProgressChart" width="800" height="400"></canvas>
+<button id="deselectAll">Deselect All</button>
+<button id="selectAll">Select All</button>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var ctx = document.getElementById('playerProgressChart').getContext('2d');
+        
+        var groupedData = JSON.parse('{{ data|safe }}');
+        var datasets = [];
+        var labelsSet = new Set();
+
+        // Function to generate distinct colors
+        function generateColor(index, total) {
+            var hue = index * (360 / total);
+            return `hsl(${hue}, 100%, 50%)`;
+        }
+
+        var totalDatasets = Object.keys(groupedData).length;
+
+        Object.keys(groupedData).forEach(function(playerName, index) {
+            var playerData = groupedData[playerName];
+            playerData.forEach(item => labelsSet.add(item.date));
+            datasets.push({
+                label: playerName,
+                data: playerData.map(item => item.globalxp_increment),
+                borderColor: generateColor(index, totalDatasets),
+                fill: false
+            });
+            // Repeat for playtime_increment if needed
+        });
+
+        var labels = Array.from(labelsSet).sort();
+
+        var chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: datasets
+            },
+            options: {
+                tooltips: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(tooltipItem, data) {
+                            var label = data.datasets[tooltipItem.datasetIndex].label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            label += tooltipItem.yLabel;
+                            return label;
+                        }
+                    }
+                },
+                legend: {
+                    position: 'bottom' // Move legend to bottom
+                },
+                scales: {
+                    xAxes: [{
+                        type: 'time',
+                        time: {
+                            unit: 'day',
+                            displayFormats: {
+                                day: 'YYYY-MM-DD'
+                            }
+                        },
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Date'
+                        }
+                    }],
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        },
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Value'
+                        }
+                    }]
+                }
+            }
+        });
+
+        // Function to toggle dataset visibility
+        function toggleVisibility(hide) {
+            chart.data.datasets.forEach(function(ds) {
+                ds.hidden = hide;
+            });
+            chart.update();
+        }
+
+        // Attach event listeners to the buttons
+        document.getElementById('deselectAll').addEventListener('click', function() {
+            toggleVisibility(true);
+        });
+        document.getElementById('selectAll').addEventListener('click', function() {
+            toggleVisibility(false);
+        });
+    });
+</script>
+
+<!-- Zebra Striping CSS for Data Table -->
+<style>
+    #playersMaxGainTable tr:nth-child(odd) {
+        background-color: #f2f2f2; /* Light gray for odd rows */
+    }
+    #playersMaxGainTable tr:nth-child(even) {
+        background-color: #ffffff; /* White for even rows */
+    }
+</style>
+
+<!-- Data Table for Players Sorted by Highest Gain -->
+<table id="playersMaxGainTable">
+    <thead>
+        <tr>
+            <th>Player Name</th>
+            <th>Date</th>
+            <th>Global XP Increment</th>
+            <th>Playtime Increment</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for player, gain in max_gains %}
+        <tr>
+            <td>{{ player }}</td>
+            <td>{{ gain.date }}</td>
+            <td>{{ gain.globalxp_increment }}</td>
+            <td>{{ gain.playtime_increment }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

@@ -1,12 +1,13 @@
 import re, json
 from copy import copy
 from datetime import datetime, timedelta
+from collections import defaultdict
 
 from django.apps import apps
 from django.core.paginator import Paginator
 from django.core.cache import cache
 from django.db import connection
-from django.db.models import Avg, Max
+from django.db.models import Avg, Max, Sum
 from django.http import Http404, JsonResponse
 from django.shortcuts import render
 from django.views.decorators.cache import cache_page
@@ -17,7 +18,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
 from leaderboards import models
-from .models import Leaderboard, Player, HourlyPlayerCount, ChivstatsSumstats, DailyPlaytime, leaderboard_classes
+from .models import Leaderboard, Player, PlaytimeEx, HourlyPlayerCount, ChivstatsSumstats, DailyPlaytime, leaderboard_classes
 # import the leaderboard List since it should be defined just in one place
 from .models import (leaderboard_classes, LatestLeaderboard, ChivstatsSumstats)
 from .serializers import (LatestLeaderboardSerializer, PlayerSerializer)
@@ -32,6 +33,170 @@ leaderboard_list_of_dict = create_leaderboard_list()
 
 from geoip2.database import Reader
 from geoip2.errors import AddressNotFoundError, GeoIP2Error
+
+
+from django.http import JsonResponse
+
+
+import json
+from django.shortcuts import render
+
+def player_progress_over_timesample(request):
+    # Sample data for demonstration
+    sample_data = [
+        {'date': '2023-10-01', 'globalxp_increment': 100, 'playtime_increment': 50},
+        {'date': '2023-10-02', 'globalxp_increment': 200, 'playtime_increment': 70},
+        # Add more sample data as needed
+    ]
+
+    # Convert the sample data to a JSON string
+    json_data = json.dumps(sample_data)
+
+    # Pass the JSON string to the template
+    return render(request, 'leaderboards/player_progress.html', {'data': json_data})
+
+
+def player_progress_over_time(request):
+    # Collect PlayFab IDs from the request
+    playfab_ids_input = request.GET.get('playfabids')  # Example: 'id1,id2,id3'
+    playfab_ids = playfab_ids_input.split(',') if playfab_ids_input else []
+
+    # Modify the query to filter based on the provided PlayFab IDs
+    playfab_ids_filter = f"AND playfabid IN ({','.join(['%s' for _ in playfab_ids])})" if playfab_ids else ""
+
+    query = f"""
+    WITH RecentSerialNumbers AS (
+        SELECT DISTINCT LEFT(CAST(serialnumber AS TEXT), 8) AS date_part, serialnumber
+        FROM globalxp
+        ORDER BY serialnumber DESC
+        LIMIT 60
+    ),
+    GlobalXpIncrements AS (
+        SELECT
+            playfabid,
+            LEFT(CAST(serialnumber AS TEXT), 8) AS date_part,
+            LEAD(stat_value) OVER (PARTITION BY playfabid ORDER BY serialnumber) - stat_value AS globalxp_increment
+        FROM globalxp
+        WHERE LEFT(CAST(serialnumber AS TEXT), 8) IN (SELECT date_part FROM RecentSerialNumbers)
+        {playfab_ids_filter}
+    ),
+TotalGlobalXpGains AS (
+    SELECT
+        playfabid,
+        SUM(globalxp_increment) AS total_globalxp_gain
+    FROM GlobalXpIncrements
+    GROUP BY playfabid
+),
+TopPlayers AS (
+    SELECT playfabid
+    FROM TotalGlobalXpGains
+    ORDER BY total_globalxp_gain DESC
+    LIMIT 300
+),
+PlaytimeIncrements AS (
+    SELECT
+        playfabid,
+        LEFT(CAST(serialnumber AS TEXT), 8) AS date_part,
+        LEAD(stat_value) OVER (PARTITION BY playfabid ORDER BY serialnumber) - stat_value AS playtime_increment
+    FROM playtimeex
+    WHERE playfabid IN (SELECT playfabid FROM TopPlayers)
+    AND LEFT(CAST(serialnumber AS TEXT), 8) IN (SELECT date_part FROM RecentSerialNumbers)
+)
+SELECT
+    p.playfabid,
+    p.date_part,
+    p.playtime_increment,
+    g.globalxp_increment
+FROM PlaytimeIncrements p
+JOIN GlobalXpIncrements g ON p.playfabid = g.playfabid AND p.date_part = g.date_part
+WHERE p.playtime_increment IS NOT NULL AND g.globalxp_increment IS NOT NULL
+ORDER BY p.playfabid, p.date_part;
+
+    """
+    with connection.cursor() as cursor:
+        if playfab_ids:
+            cursor.execute(query, playfab_ids)
+        else:
+            cursor.execute(query)
+        rows = cursor.fetchall()
+
+    # Fetch player details and filter out badlisted players
+    playfabids = [row[0] for row in rows]
+    players = Player.objects.filter(playfabid__in=playfabids, badlist=False).in_bulk(field_name='playfabid')
+
+    grouped_data = defaultdict(list)
+    max_gains_dict = {}
+    for row in rows:
+        player = players.get(row[0])
+        if player:
+            formatted_date = row[1][:4] + '-' + row[1][4:6] + '-' + row[1][6:8]
+            gain_data = {
+                'date': formatted_date,
+                'globalxp_increment': row[3],
+                'playtime_increment': row[2]
+            }
+            grouped_data[player.most_common_alias()].append(gain_data)
+
+            # Update max gain for each player
+            if player.most_common_alias() not in max_gains_dict or gain_data['globalxp_increment'] > max_gains_dict[player.most_common_alias()]['globalxp_increment']:
+                max_gains_dict[player.most_common_alias()] = gain_data
+
+    # Convert the max gains dictionary to a sorted list of tuples
+    max_gains = sorted(max_gains_dict.items(), key=lambda x: x[1]['globalxp_increment'], reverse=True)
+
+    # Convert the grouped data to a JSON string
+    json_data = json.dumps(grouped_data)
+
+    return render(request, 'leaderboards/player_progress.html', {
+        'leaderboards': leaderboard_list_of_dict, 
+        'data': json_data, 
+        'max_gains': max_gains
+    })
+
+
+def merged_leaderboard_view(request):
+    # Get the latest serial numbers for DailyPlaytime and PlaytimeEx
+    latest_serial_number_daily = DailyPlaytime.objects.latest('serialnumber').serialnumber
+    latest_serial_number_ex = PlaytimeEx.objects.latest('serialnumber').serialnumber
+
+    # Aggregate data from DailyPlaytime with latest serial number
+    playtime_data = DailyPlaytime.objects.filter(serialnumber=latest_serial_number_daily).values('playfabid').annotate(total_playtime=Sum('stat_value'))
+
+    # Aggregate data from PlaytimeEx with latest serial number
+    playtimeex_data = PlaytimeEx.objects.filter(serialnumber=latest_serial_number_ex).values('playfabid').annotate(total_playtime=Sum('stat_value'))
+
+    # Combine and summarize the results
+    combined_data = {}
+    for entry in list(playtime_data) + list(playtimeex_data):
+        key = entry['playfabid']
+        combined_data[key] = combined_data.get(key, 0) + entry['total_playtime']
+
+    # Sort by total playtime in descending order and limit to top 1000
+    sorted_combined_data = sorted(combined_data.items(), key=lambda x: x[1], reverse=True)[:1000]
+
+    # Fetch player details for each playfabid
+    playfabids = [key for key, _ in sorted_combined_data]
+    players = Player.objects.filter(playfabid__in=playfabids).in_bulk(field_name='playfabid')
+
+    # Prepare data for display with player details
+    merged_leaderboard = []
+    for playfabid, total_playtime in sorted_combined_data:
+        player = players.get(playfabid)
+        if player:
+            merged_leaderboard.append({
+                'playfabid': playfabid,
+                'player_name': player.most_common_alias(),  # Assuming 'most_common_alias' method returns the friendly name
+                'total_playtime': total_playtime,
+                'profile_url': f'/leaderboards/player/{playfabid}'  # Modify this URL to the correct path for player profiles
+            })
+
+    # Render in template
+    context = {'merged_leaderboard': merged_leaderboard}
+    return render(request, 'leaderboards/merged_leaderboard_view.html', context)
+
+
+
+
 
 def get_meta_sumstats(request):
     latest_entry = ChivstatsSumstats.objects.order_by('-serial_date').first()
