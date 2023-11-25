@@ -91,6 +91,9 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'leaderboards:top_gainers_leaderboard' %}">Meta: Top Gainers</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'leaderboards:player_progress' %}"><b>Meta: Graph Progress(XP)</b></a>
+                        </li>
                         {% block sidebar %}
                         {% for item in leaderboards %}
                         {% if item.category == 'category' %}

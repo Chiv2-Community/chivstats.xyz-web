@@ -45,55 +45,63 @@
         var labels = Array.from(labelsSet).sort();
 
         var chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: datasets
-            },
-            options: {
-                tooltips: {
-                    mode: 'index',
-                    intersect: false,
-                    callbacks: {
-                        label: function(tooltipItem, data) {
-                            var label = data.datasets[tooltipItem.datasetIndex].label || '';
-                            if (label) {
-                                label += ': ';
-                            }
-                            label += tooltipItem.yLabel;
-                            return label;
-                        }
-                    }
-                },
-                legend: {
-                    position: 'bottom' // Move legend to bottom
-                },
-                scales: {
-                    xAxes: [{
-                        type: 'time',
-                        time: {
-                            unit: 'day',
-                            displayFormats: {
-                                day: 'YYYY-MM-DD'
-                            }
-                        },
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Date'
-                        }
-                    }],
-                    yAxes: [{
-                        ticks: {
-                            beginAtZero: true
-                        },
-                        scaleLabel: {
-                            display: true,
-                            labelString: 'Value'
-                        }
-                    }]
+    type: 'line',
+    data: {
+        labels: labels,
+        datasets: datasets
+    },
+    options: {
+        plugins: {
+            legend: {
+                position: 'bottom', // Position legend at the bottom
+                labels: {
+                    boxWidth: 20, // Adjust box width as needed
+                    padding: 20   // Adjust padding around legend items
                 }
             }
-        });
+        },
+        tooltips: {
+            mode: 'index',
+            intersect: false,
+            callbacks: {
+                label: function(tooltipItem, data) {
+                    var label = data.datasets[tooltipItem.datasetIndex].label || '';
+                    if (label) {
+                        label += ': ';
+                    }
+                    label += tooltipItem.yLabel;
+                    return label;
+                }
+            }
+        },
+        scales: {
+            xAxes: [{
+                type: 'time',
+                time: {
+                    unit: 'day',
+                    displayFormats: {
+                        day: 'YYYY-MM-DD'
+                    }
+                },
+                scaleLabel: {
+                    display: true,
+                    labelString: 'Date'
+                }
+            }],
+            yAxes: [{
+                ticks: {
+                    beginAtZero: true
+                },
+                scaleLabel: {
+                    display: true,
+                    labelString: 'Value'
+                }
+            }]
+        }
+    }
+});
+
+
 
         // Function to toggle dataset visibility
         function toggleVisibility(hide) {
@@ -113,13 +121,25 @@
     });
 </script>
 
-<!-- Zebra Striping CSS for Data Table -->
 <style>
+    #playersMaxGainTable {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    #playersMaxGainTable th, #playersMaxGainTable td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
     #playersMaxGainTable tr:nth-child(odd) {
-        background-color: #f2f2f2; /* Light gray for odd rows */
+        background-color: #f2f2f2;
     }
     #playersMaxGainTable tr:nth-child(even) {
-        background-color: #ffffff; /* White for even rows */
+        background-color: #ffffff;
+    }
+    #playersMaxGainTable th {
+        background-color: #4CAF50;
+        color: white;
     }
 </style>
 
