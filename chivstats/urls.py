@@ -6,6 +6,7 @@ from django.conf import settings
 urlpatterns = [
     path('leaderboards/', include('leaderboards.urls')),
     path('admin/', admin.site.urls),
+    path("account/", include("account.urls")),
     path('', RedirectView.as_view(url='/leaderboards/', permanent=True)),
 ]
 

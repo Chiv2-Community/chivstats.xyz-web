@@ -56,11 +56,21 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    'django.contrib.sites',
     'django.contrib.staticfiles',
     'debug_toolbar',
     'rest_framework',
     'leaderboards',
+    'account'
 ]
+
+SITE_ID = 1
+
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+    "account.auth_backends.UsernameAuthenticationBackend",
+]
+
 
 REST_FRAMEWORK = {
 #    'DEFAULT_PERMISSION_CLASSES': [
@@ -80,6 +90,8 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    "account.middleware.LocaleMiddleware",
+    "account.middleware.TimezoneMiddleware",
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
@@ -96,6 +108,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                "account.context_processors.account",
                 #'leaderboards.context_processors.leaderboard_names',
             ],
         },

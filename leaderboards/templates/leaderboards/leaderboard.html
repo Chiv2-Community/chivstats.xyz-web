@@ -1,13 +1,13 @@
 {% extends 'leaderboards/base.html' %}
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-EQG3BMRF63"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-    
-      gtag('config', 'G-EQG3BMRF63');
-    </script>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-EQG3BMRF63"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-EQG3BMRF63');
+</script>
 
 {% block content %}
 <h1>{{ leaderboard_name }}</h1>
@@ -37,6 +37,13 @@
 {% endif %}
 <br>
 
+<!-- Button for Copying to Clipboard -->
+<button id="copyToClipboard" class="btn btn-primary">Copy Selected IDs to Clipboard</button>
+
+<!-- Button for Sending to Progress Charting -->
+<button id="sendToProgressCharting" class="btn btn-success">Send to Progress Charting</button>
+<button id="selectAll" class="btn btn-secondary">Select All</button>
+
 <!-- Pagination at the top -->
 <div class="d-flex justify-content-center">
     {% if page_obj.has_previous %}
@@ -53,6 +60,7 @@
 <table class="table table-striped" id="leaderboardTable">
     <thead>
         <tr>
+            <th style="width: 30px;">Select</th> <!-- Static width for checkbox column -->
             <th>Position</th>
             <th>Display Name</th>
             <th>Stat Value</th>
@@ -61,6 +69,10 @@
     <tbody>
         {% for entry in page_obj %}
             <tr>
+                <td>
+                    <!-- Checkbox for each player -->
+                    <input type="checkbox" class="player-checkbox" data-playfabid="{{ entry.playfabid.playfabid }}">
+                </td>
                 <td>
                     {% if search_query and player_position %}
                         {% if entry.rank == player_position %}
@@ -95,4 +107,31 @@
         <a class="btn btn-outline-info" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
     {% endif %}
 </div>
+
+<script>
+    document.getElementById('copyToClipboard').addEventListener('click', function() {
+        const selectedCheckboxes = document.querySelectorAll('.player-checkbox:checked');
+        const playfabIds = Array.from(selectedCheckboxes).map(cb => cb.getAttribute('data-playfabid'));
+        const playfabIdString = playfabIds.join(','); // No space after comma
+
+        navigator.clipboard.writeText(playfabIdString).then(function() {
+            alert('Copied to clipboard: ' + playfabIdString);
+        }, function(err) {
+            console.error('Could not copy text: ', err);
+        });
+    });
+
+    document.getElementById('sendToProgressCharting').addEventListener('click', function() {
+        const selectedCheckboxes = document.querySelectorAll('.player-checkbox:checked');
+        const playfabIds = Array.from(selectedCheckboxes).map(cb => cb.getAttribute('data-playfabid'));
+        const playfabIdString = playfabIds.join('%2C'); // Encoded comma for URL
+        const url = `https://chivstats.xyz/leaderboards/player_progress/?playfabids=${playfabIdString}`;
+        window.location.href = url;
+    });
+    document.getElementById('selectAll').addEventListener('click', function() {
+        const checkboxes = document.querySelectorAll('.player-checkbox');
+        checkboxes.forEach(cb => cb.checked = true);
+    });
+</script>
+
 {% endblock %}
