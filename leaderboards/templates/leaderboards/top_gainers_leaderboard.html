@@ -29,6 +29,10 @@
     
     <input type="submit" value="Update Leaderboard View">
 </form>
+<button id="selectAll" class="btn btn-info">Select All</button>
+<button id="copyToClipboard" class="btn btn-primary">Copy Selected IDs to Clipboard</button>
+<button id="sendToProgressCharting" class="btn btn-success">Send to Progress Charting</button>
+
 
 <br>
 <h4>{% for table, friendly_name in table_names %}
@@ -54,14 +58,16 @@ in the previous <b>{{ time_period }} days</b>.</h4>
 <table class="table table-striped" id="leaderboardTable">
     <thead>
         <tr>
-            <th>Rank</th>
-            <th>Player</th>
+            <th style="width: 30px;">Select</th>
+            <th style="width: 50px;">Rank</th>
+            <th style="width: 300px;">Player</th>
             <th>Raw Gain</th>
         </tr>
     </thead>
     <tbody>
         {% for entry in leaderboard_data %}
         <tr>
+            <td><input type="checkbox" class="player-checkbox" data-playfabid="{{ entry.playfabid }}"></td>
             <td>{{ forloop.counter }}</td>
             <td><a href="https://chivstats.xyz/leaderboards/player/{{ entry.playfabid }}/">{{ entry.most_common_alias }}</a></td>
             <td>{{ entry.total_gain }}</td>
@@ -81,6 +87,34 @@ in the previous <b>{{ time_period }} days</b>.</h4>
         <a class="btn btn-outline-info" href="?page={{ page_obj.paginator.num_pages }}&table_name={{ table_name }}&time_period={{ time_period }}">Last</a>
     {% endif %}
 </div>
+<script>
+    // Select All functionality
+    document.getElementById('selectAll').addEventListener('click', function() {
+        document.querySelectorAll('.player-checkbox').forEach(function(checkbox) {
+            checkbox.checked = true;
+        });
+    });
 
+    // Copy to Clipboard functionality
+    document.getElementById('copyToClipboard').addEventListener('click', function() {
+        const selectedCheckboxes = document.querySelectorAll('.player-checkbox:checked');
+        const playfabIds = Array.from(selectedCheckboxes).map(cb => cb.getAttribute('data-playfabid'));
+        const playfabIdString = playfabIds.join(',');
+        navigator.clipboard.writeText(playfabIdString).then(function() {
+            alert('Copied to clipboard: ' + playfabIdString);
+        }, function(err) {
+            console.error('Could not copy text: ', err);
+        });
+    });
+
+    // Send to Progress Charting functionality
+    document.getElementById('sendToProgressCharting').addEventListener('click', function() {
+        const selectedCheckboxes = document.querySelectorAll('.player-checkbox:checked');
+        const playfabIds = Array.from(selectedCheckboxes).map(cb => cb.getAttribute('data-playfabid'));
+        const playfabIdString = playfabIds.join('%2C'); // Encoded comma for URL
+        const url = `https://chivstats.xyz/leaderboards/player_progress/?playfabids=${playfabIdString}`;
+        window.location.href = url;
+    });
+</script>
 
 {% endblock %}

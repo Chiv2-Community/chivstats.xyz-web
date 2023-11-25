@@ -25,36 +25,16 @@ from .serializers import (LatestLeaderboardSerializer, PlayerSerializer)
 from .serializers import LeaderboardSerializer
 from .utils import (humanize_leaderboard_name, organize_sidebar, create_leaderboard_list, read_yaml_news, to_json)
 
+from geoip2.database import Reader
+from geoip2.errors import AddressNotFoundError, GeoIP2Error
+
+
+
 leaderboards = copy(leaderboard_classes);
 #For now simple alphabetical order
 leaderboards.sort(key=organize_sidebar);
 #list of dicts of url and readable text
 leaderboard_list_of_dict = create_leaderboard_list()
-
-from geoip2.database import Reader
-from geoip2.errors import AddressNotFoundError, GeoIP2Error
-
-
-from django.http import JsonResponse
-
-
-import json
-from django.shortcuts import render
-
-def player_progress_over_timesample(request):
-    # Sample data for demonstration
-    sample_data = [
-        {'date': '2023-10-01', 'globalxp_increment': 100, 'playtime_increment': 50},
-        {'date': '2023-10-02', 'globalxp_increment': 200, 'playtime_increment': 70},
-        # Add more sample data as needed
-    ]
-
-    # Convert the sample data to a JSON string
-    json_data = json.dumps(sample_data)
-
-    # Pass the JSON string to the template
-    return render(request, 'leaderboards/player_progress.html', {'data': json_data})
-
 
 def player_progress_over_time(request):
     # Collect PlayFab IDs from the request
