@@ -8,7 +8,7 @@ from django.core.paginator import Paginator
 from django.core.cache import cache
 from django.db import connection
 from django.db.models import Avg, Max, Sum
-from django.http import Http404, JsonResponse
+from django.http import Http404, JsonResponse, HttpResponseBadRequest
 from django.shortcuts import render
 from django.views.decorators.cache import cache_page
 
@@ -36,7 +36,15 @@ leaderboards.sort(key=organize_sidebar);
 #list of dicts of url and readable text
 leaderboard_list_of_dict = create_leaderboard_list()
 
-def player_progress_over_time(request):
+def player_progress_over_time(request, source_table='GlobalXp'):
+    # Get the source_table from the request
+    source_table = request.GET.get('table_name', default='GlobalXp')  # Replace 'default_table_name' with your default table name
+
+    # Validate the source table name
+    if source_table not in leaderboards:
+        # Handle invalid table name (e.g., return an error message)
+        return HttpResponseBadRequest("Invalid source table name")
+
     # Collect PlayFab IDs from the request
     playfab_ids_input = request.GET.get('playfabids')  # Example: 'id1,id2,id3'
     playfab_ids = playfab_ids_input.split(',') if playfab_ids_input else []
@@ -47,52 +55,52 @@ def player_progress_over_time(request):
     query = f"""
     WITH RecentSerialNumbers AS (
         SELECT DISTINCT LEFT(CAST(serialnumber AS TEXT), 8) AS date_part, serialnumber
-        FROM globalxp
+        FROM {source_table}
         ORDER BY serialnumber DESC
         LIMIT 60
     ),
-    GlobalXpIncrements AS (
+    SourceTableIncrements AS (
         SELECT
             playfabid,
             LEFT(CAST(serialnumber AS TEXT), 8) AS date_part,
-            LEAD(stat_value) OVER (PARTITION BY playfabid ORDER BY serialnumber) - stat_value AS globalxp_increment
-        FROM globalxp
+            LEAD(stat_value) OVER (PARTITION BY playfabid ORDER BY serialnumber) - stat_value AS source_increment
+        FROM {source_table}
         WHERE LEFT(CAST(serialnumber AS TEXT), 8) IN (SELECT date_part FROM RecentSerialNumbers)
         {playfab_ids_filter}
     ),
-TotalGlobalXpGains AS (
+    TotalSourceGains AS (
+        SELECT
+            playfabid,
+            SUM(source_increment) AS total_source_gain
+        FROM SourceTableIncrements
+        GROUP BY playfabid
+    ),
+    TopPlayers AS (
+        SELECT playfabid
+        FROM TotalSourceGains
+        ORDER BY total_source_gain DESC
+        LIMIT 300
+    ),
+    PlaytimeIncrements AS (
+        SELECT
+            playfabid,
+            LEFT(CAST(serialnumber AS TEXT), 8) AS date_part,
+            LEAD(stat_value) OVER (PARTITION BY playfabid ORDER BY serialnumber) - stat_value AS playtime_increment
+        FROM playtimeex
+        WHERE playfabid IN (SELECT playfabid FROM TopPlayers)
+        AND LEFT(CAST(serialnumber AS TEXT), 8) IN (SELECT date_part FROM RecentSerialNumbers)
+    )
     SELECT
-        playfabid,
-        SUM(globalxp_increment) AS total_globalxp_gain
-    FROM GlobalXpIncrements
-    GROUP BY playfabid
-),
-TopPlayers AS (
-    SELECT playfabid
-    FROM TotalGlobalXpGains
-    ORDER BY total_globalxp_gain DESC
-    LIMIT 300
-),
-PlaytimeIncrements AS (
-    SELECT
-        playfabid,
-        LEFT(CAST(serialnumber AS TEXT), 8) AS date_part,
-        LEAD(stat_value) OVER (PARTITION BY playfabid ORDER BY serialnumber) - stat_value AS playtime_increment
-    FROM playtimeex
-    WHERE playfabid IN (SELECT playfabid FROM TopPlayers)
-    AND LEFT(CAST(serialnumber AS TEXT), 8) IN (SELECT date_part FROM RecentSerialNumbers)
-)
-SELECT
-    p.playfabid,
-    p.date_part,
-    p.playtime_increment,
-    g.globalxp_increment
-FROM PlaytimeIncrements p
-JOIN GlobalXpIncrements g ON p.playfabid = g.playfabid AND p.date_part = g.date_part
-WHERE p.playtime_increment IS NOT NULL AND g.globalxp_increment IS NOT NULL
-ORDER BY p.playfabid, p.date_part;
-
+        p.playfabid,
+        p.date_part,
+        p.playtime_increment,
+        s.source_increment
+    FROM PlaytimeIncrements p
+    JOIN SourceTableIncrements s ON p.playfabid = s.playfabid AND p.date_part = s.date_part
+    WHERE p.playtime_increment IS NOT NULL AND s.source_increment IS NOT NULL
+    ORDER BY p.playfabid, p.date_part;
     """
+
     with connection.cursor() as cursor:
         if playfab_ids:
             cursor.execute(query, playfab_ids)
@@ -112,25 +120,29 @@ ORDER BY p.playfabid, p.date_part;
             formatted_date = row[1][:4] + '-' + row[1][4:6] + '-' + row[1][6:8]
             gain_data = {
                 'date': formatted_date,
-                'globalxp_increment': row[3],
+                'source_increment': row[3],
                 'playtime_increment': row[2]
             }
             grouped_data[player.most_common_alias()].append(gain_data)
 
             # Update max gain for each player
-            if player.most_common_alias() not in max_gains_dict or gain_data['globalxp_increment'] > max_gains_dict[player.most_common_alias()]['globalxp_increment']:
+            if player.most_common_alias() not in max_gains_dict or gain_data['source_increment'] > max_gains_dict[player.most_common_alias()]['source_increment']:
                 max_gains_dict[player.most_common_alias()] = gain_data
 
     # Convert the max gains dictionary to a sorted list of tuples
-    max_gains = sorted(max_gains_dict.items(), key=lambda x: x[1]['globalxp_increment'], reverse=True)
+    max_gains = sorted(max_gains_dict.items(), key=lambda x: x[1]['source_increment'], reverse=True)
 
     # Convert the grouped data to a JSON string
     json_data = json.dumps(grouped_data)
 
+    # Include valid_table_names in the context
     return render(request, 'leaderboards/player_progress.html', {
         'leaderboards': leaderboard_list_of_dict, 
         'data': json_data, 
-        'max_gains': max_gains
+        'max_gains': max_gains,
+        'valid_table_names': leaderboards,
+        'table_name': source_table,
+        'playfab_ids_input': playfab_ids_input,
     })
 
 

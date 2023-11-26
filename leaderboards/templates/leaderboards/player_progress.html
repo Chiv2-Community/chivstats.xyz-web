@@ -1,13 +1,26 @@
 {% extends "leaderboards/base.html" %}
 {% block content %}
+
 <!-- Include Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://www.kryogenix.org/code/browser/sorttable/sorttable.js"></script>
 
-<!-- Form for PlayFab IDs Input -->
+
+<!-- Form for Table Name and PlayFab IDs Input -->
 <form action="" method="get">
-    <label for="playfabids">Enter PlayFab IDs (comma-separated):</label>
-    <input type="text" id="playfabids" name="playfabids" placeholder="id1,id2,id3">
-    <button type="submit">Filter</button>
+    <!-- Dropdown for Table Names -->
+    <label for="table_name">Leaderboard:</label>
+    <select name="table_name" id="table_name">
+        {% for table in valid_table_names %}
+        <option value="{{ table }}" {% if table == table_name %}selected{% endif %}>{{ table }}</option>
+        {% endfor %}
+    </select>
+    <br> <!-- New line for PlayFab IDs input -->
+    <!-- Input for PlayFab IDs -->
+    <label for="playfabids">Filter by Playerids:</label>
+    <input type="text" id="playfabids" name="playfabids" placeholder="Blank for top Leaderboard, or comma-separated playerids(id1,id2,id3)" style="width: calc(80% - 20px);" {% if playfab_ids_input %}value="{{ playfab_ids_input }}"{% else %}value=""{% endif %}>
+    <br><button type="submit">SUBMIT</button>
+    <button type="reset" id="resetForm">Reset</button>
 </form>
 
 <canvas id="playerProgressChart" width="800" height="400"></canvas>
@@ -35,73 +48,78 @@
             playerData.forEach(item => labelsSet.add(item.date));
             datasets.push({
                 label: playerName,
-                data: playerData.map(item => item.globalxp_increment),
+                data: playerData.map(item => item.source_increment),
                 borderColor: generateColor(index, totalDatasets),
                 fill: false
             });
-            // Repeat for playtime_increment if needed
         });
 
         var labels = Array.from(labelsSet).sort();
 
         var chart = new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels: labels,
-        datasets: datasets
-    },
-    options: {
-        plugins: {
-            legend: {
-                position: 'bottom', // Position legend at the bottom
-                labels: {
-                    boxWidth: 20, // Adjust box width as needed
-                    padding: 20   // Adjust padding around legend items
-                }
-            }
-        },
-        tooltips: {
-            mode: 'index',
-            intersect: false,
-            callbacks: {
-                label: function(tooltipItem, data) {
-                    var label = data.datasets[tooltipItem.datasetIndex].label || '';
-                    if (label) {
-                        label += ': ';
-                    }
-                    label += tooltipItem.yLabel;
-                    return label;
-                }
-            }
-        },
-        scales: {
-            xAxes: [{
-                type: 'time',
-                time: {
-                    unit: 'day',
-                    displayFormats: {
-                        day: 'YYYY-MM-DD'
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: datasets
+            },
+            options: {
+                onClick: function(evt, activeElements) {
+                    if (activeElements.length > 0) {
+                        var firstPoint = activeElements[0];
+                        var label = this.data.datasets[firstPoint.datasetIndex].label;
+                        // Update the player ID input field
+                        document.getElementById('playfabids').value = label;
                     }
                 },
-                scaleLabel: {
-                    display: true,
-                    labelString: 'Date'
-                }
-            }],
-            yAxes: [{
-                ticks: {
-                    beginAtZero: true
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            boxWidth: 10, // Smaller legend box width
+                            padding: 10   // Smaller padding around legend items
+                        }
+                    }
                 },
-                scaleLabel: {
-                    display: true,
-                    labelString: 'Value'
+                tooltips: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(tooltipItem, data) {
+                            var label = data.datasets[tooltipItem.datasetIndex].label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            label += tooltipItem.yLabel;
+                            return label;
+                        }
+                    }
+                },
+                scales: {
+                    xAxes: [{
+                        type: 'time',
+                        time: {
+                            unit: 'day',
+                            displayFormats: {
+                                day: 'YYYY-MM-DD'
+                            }
+                        },
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Date'
+                        }
+                    }],
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true
+                        },
+                        scaleLabel: {
+                            display: true,
+                            labelString: 'Value'
+                        }
+                    }]
                 }
-            }]
-        }
-    }
-});
-
-
+            }
+        });
 
         // Function to toggle dataset visibility
         function toggleVisibility(hide) {
@@ -117,6 +135,12 @@
         });
         document.getElementById('selectAll').addEventListener('click', function() {
             toggleVisibility(false);
+        });
+
+        // Reset form functionality
+        document.getElementById('resetForm').addEventListener('click', function() {
+            document.getElementById('playfabids').value = '';
+            document.getElementById('table_name').selectedIndex = 0;
         });
     });
 </script>
@@ -144,21 +168,25 @@
 </style>
 
 <!-- Data Table for Players Sorted by Highest Gain -->
-<table id="playersMaxGainTable">
+<br><br>
+Table is sortable and entries represent the player's single largest gain in a day, with their associated playtime increment..<br>
+<table id="playersMaxGainTable" class="sortable">
     <thead>
         <tr>
+            <th>Rank</th> <!-- New column for ranking -->
             <th>Player Name</th>
-            <th>Date</th>
-            <th>Global XP Increment</th>
-            <th>Playtime Increment</th>
+            <th>Date of big wins</th>
+            <th>{{ table_name }} Increment amount</th>
+            <th>Playtime amount</th>
         </tr>
     </thead>
     <tbody>
         {% for player, gain in max_gains %}
         <tr>
+            <td>{{ forloop.counter }}</td> <!-- Display the rank using forloop.counter -->
             <td>{{ player }}</td>
             <td>{{ gain.date }}</td>
-            <td>{{ gain.globalxp_increment }}</td>
+            <td>{{ gain.source_increment }}</td>
             <td>{{ gain.playtime_increment }}</td>
         </tr>
         {% endfor %}
