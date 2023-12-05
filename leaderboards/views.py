@@ -23,7 +23,7 @@ from .models import Leaderboard, Player, PlaytimeEx, HourlyPlayerCount, Chivstat
 from .models import (leaderboard_classes, LatestLeaderboard, ChivstatsSumstats)
 from .serializers import (LatestLeaderboardSerializer, PlayerSerializer)
 from .serializers import LeaderboardSerializer
-from .utils import (humanize_leaderboard_name, organize_sidebar, create_leaderboard_list, read_yaml_news, to_json)
+from .utils import (humanize_leaderboard_name, organize_sidebar, create_leaderboard_list, read_yaml_news, to_json, get_level_data)
 
 from geoip2.database import Reader
 from geoip2.errors import AddressNotFoundError, GeoIP2Error
@@ -35,6 +35,22 @@ leaderboards = copy(leaderboard_classes);
 leaderboards.sort(key=organize_sidebar);
 #list of dicts of url and readable text
 leaderboard_list_of_dict = create_leaderboard_list()
+
+
+
+def calculate_level_and_gold(xp):
+    level_data = get_level_data()
+    level = 0
+    total_gold = 0
+    for level_info in level_data:
+        if xp >= level_info['xp']:
+            level = level_info['level']
+            total_gold += level_info['reward']
+        else:
+            break
+    return level, total_gold
+
+
 
 def player_progress_over_time(request, source_table='GlobalXp'):
     # Get the source_table from the request
@@ -545,6 +561,7 @@ def player_profile(request, playfabid):
         raise Http404("Player does not exist")
     leaderboard_data = []
     latest_serial_numbers = {}
+
     for leaderboard_name in leaderboards:
         leaderboard_model = getattr(models, leaderboard_name)
         latest_serial_number = LatestLeaderboard.objects.get(leaderboard_name=leaderboard_name).serialnumber
@@ -559,34 +576,29 @@ def player_profile(request, playfabid):
                 serialnumber=latest_serial_number,
                 stat_value__gt=stat_value
             ).count() + 1
+            level, total_gold = calculate_level_and_gold(stat_value)
             leaderboard_data.append({
                 'leaderboard_name': leaderboard_name,
                 'stat_value': stat_value,
                 'rank': rank,
                 'title': humanize_leaderboard_name(leaderboard_name),
+                'level': level,  # Add level
+                'total_gold': total_gold,  # Add total gold
             })
     playtime_data = []
     today = datetime.now().date()
-    for i in range(1, 8):
+    for i in range(14):  # Last 7 days including today
         date = today - timedelta(days=i)
         date_str = date.strftime("%Y%m%d")
-        highest_stat_value = leaderboard_model.objects.filter( # Changed from DailyPlaytime to leaderboard_model
-            playfabid=player,
-            playfabid__playfabid=playfabid,  # Filter for specific playfabid
+        highest_stat_value = DailyPlaytime.objects.filter(
+            playfabid=playfabid,
             serialnumber__startswith=date_str
         ).aggregate(Max('stat_value'))['stat_value__max']
-        if highest_stat_value:
-            playtime_entry = leaderboard_model.objects.filter( # Changed from DailyPlaytime to leaderboard_model
-                playfabid=player,
-                playfabid__playfabid=playfabid,  # Filter for specific playfabid
-                serialnumber__startswith=date_str,
-                stat_value=highest_stat_value
-            ).first()
+        if highest_stat_value is not None:
             playtime_data.append({
                 'date': date.strftime("%B %d, %Y"),
-                'playtime': playtime_entry.stat_value,
+                'playtime': highest_stat_value,
             })
-    #print(playtime_data)
     context = {
         'playfabid': playfabid,
         'player': player,

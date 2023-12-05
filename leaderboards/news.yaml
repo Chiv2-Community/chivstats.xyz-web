@@ -1,3 +1,5 @@
+- date: 2023-12-05
+  content: Added estimated weapon level to player profile page. Bugfix on daily playtime on player profiles.
 - date: 2023-11-24
   content: Initial creation of a new charting view, player progress. <a href="player_progress">Player Progress Charting</a>. Added playerid clipboard and send to chart functionality. Updated season to recent patch. Since 2023-05-31, there have been 1865465 unique players in chivalry 2.
 - date: 2023-09-03

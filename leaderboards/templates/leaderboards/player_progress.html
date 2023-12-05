@@ -23,38 +23,56 @@
     <button type="reset" id="resetForm">Reset</button>
 </form>
 
-<canvas id="playerProgressChart" width="800" height="400"></canvas>
+{{ data|json_script:"groupedData" }}
+<canvas id="playerProgressChart" width="700" height="380"></canvas>
 <button id="deselectAll">Deselect All</button>
 <button id="selectAll">Select All</button>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var ctx = document.getElementById('playerProgressChart').getContext('2d');
-        
-        var groupedData = JSON.parse('{{ data|safe }}');
-        var datasets = [];
-        var labelsSet = new Set();
+document.addEventListener('DOMContentLoaded', function() {
+    var ctx = document.getElementById('playerProgressChart').getContext('2d');
+    
+    var groupedData = JSON.parse(document.getElementById('groupedData').textContent);
+    console.log('groupedData:', groupedData); // Add this line to log groupedData
 
+    var datasets = [];
+    var labelsSet = new Set();
         // Function to generate distinct colors
         function generateColor(index, total) {
             var hue = index * (360 / total);
             return `hsl(${hue}, 100%, 50%)`;
         }
 
-        var totalDatasets = Object.keys(groupedData).length;
+        var sortedData = Object.entries(groupedData).sort(function(a, b) {
+    // Ensure both a[1] and b[1] are arrays before proceeding
+    if (!Array.isArray(a[1]) || !Array.isArray(b[1])) {
+        return 0; // or handle this case as you see fit
+    }
 
-        Object.keys(groupedData).forEach(function(playerName, index) {
-            var playerData = groupedData[playerName];
-            playerData.forEach(item => labelsSet.add(item.date));
-            datasets.push({
-                label: playerName,
-                data: playerData.map(item => item.source_increment),
-                borderColor: generateColor(index, totalDatasets),
-                fill: false
-            });
-        });
+    var totalA = a[1].reduce((acc, item) => acc + item.source_increment, 0);
+    var totalB = b[1].reduce((acc, item) => acc + item.source_increment, 0);
+    return totalB - totalA;
+}).slice(0, 25);
+
+sortedData.forEach(function([playerName, playerData], index) {
+    // Check if playerData is an array
+    if (!Array.isArray(playerData)) {
+        console.error('playerData is not an array for player:', playerName, playerData);
+        return; // Skip this iteration
+    }
+
+    playerData.forEach(item => labelsSet.add(item.date));
+    datasets.push({
+        label: playerName,
+        data: playerData.map(item => item.source_increment),
+        borderColor: generateColor(index, 25),
+        fill: false
+    });
+});
+
 
         var labels = Array.from(labelsSet).sort();
+
 
         var chart = new Chart(ctx, {
             type: 'line',
@@ -143,6 +161,36 @@
             document.getElementById('table_name').selectedIndex = 0;
         });
     });
+    document.addEventListener('DOMContentLoaded', function() {
+        var table = document.getElementById('playersMaxGainTable');
+        var lastSelectedRow = null;
+
+        table.addEventListener('click', function(e) {
+            var currentRow = e.target.parentNode;
+            if (e.shiftKey && lastSelectedRow) {
+                var start = currentRow.rowIndex;
+                var end = lastSelectedRow.rowIndex;
+                for (var i = Math.min(start, end); i <= Math.max(start, end); i++) {
+                    table.rows[i].classList.toggle('selected', true);
+                }
+            } else if (e.ctrlKey || e.metaKey) {
+                currentRow.classList.toggle('selected');
+            } else {
+                Array.from(table.rows).forEach(row => row.classList.remove('selected'));
+                currentRow.classList.add('selected');
+            }
+            lastSelectedRow = currentRow;
+            updateChartSelection();
+        });
+
+        function updateChartSelection() {
+            var selectedPlayers = Array.from(table.getElementsByClassName('selected')).map(row => row.cells[1].textContent);
+            chart.data.datasets.forEach(function(dataset) {
+                dataset.hidden = !selectedPlayers.includes(dataset.label);
+            });
+            chart.update();
+        }
+    });
 </script>
 
 <style>
@@ -165,6 +213,9 @@
         background-color: #4CAF50;
         color: white;
     }
+    .selected {
+        background-color: #add8e6; /* Light blue background for selected rows */
+    }
 </style>
 
 <!-- Data Table for Players Sorted by Highest Gain -->
@@ -173,7 +224,7 @@ Table is sortable and entries represent the player's single largest gain in a da
 <table id="playersMaxGainTable" class="sortable">
     <thead>
         <tr>
-            <th>Rank</th> <!-- New column for ranking -->
+            <th>Rank</th>
             <th>Player Name</th>
             <th>Date of big wins</th>
             <th>{{ table_name }} Increment amount</th>
@@ -183,7 +234,7 @@ Table is sortable and entries represent the player's single largest gain in a da
     <tbody>
         {% for player, gain in max_gains %}
         <tr>
-            <td>{{ forloop.counter }}</td> <!-- Display the rank using forloop.counter -->
+            <td>{{ forloop.counter }}</td>
             <td>{{ player }}</td>
             <td>{{ gain.date }}</td>
             <td>{{ gain.source_increment }}</td>

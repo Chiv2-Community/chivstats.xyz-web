@@ -29,6 +29,7 @@
             <th>Leaderboards</th>
             <th>Rank</th>
             <th>Value</th>
+            <th>Level</th>
         </tr>
     </thead>
     <tbody>
@@ -37,6 +38,7 @@
                 <td>{{ entry.title }}</td>
                 <td>{% if entry.rank %}{{ entry.rank }}{% else %}N/A{% endif %}</td>
                 <td>{% if entry.rank %}{{ entry.stat_value }}{% else %}-{% endif %}</td>
+                <td>{{ entry.level }}</td>
             </tr>
         {% endfor %}
     </tbody>
