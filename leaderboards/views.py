@@ -7,10 +7,13 @@ from django.apps import apps
 from django.core.paginator import Paginator
 from django.core.cache import cache
 from django.db import connection
-from django.db.models import Avg, Max, Sum
+from django.db.models import Avg, Max, Sum, Q, F, Subquery, OuterRef
 from django.http import Http404, JsonResponse, HttpResponseBadRequest
 from django.shortcuts import render
 from django.views.decorators.cache import cache_page
+
+from django.db.models import F, Value, IntegerField
+from django.db.models.functions import Coalesce
 
 from rest_framework import generics, status
 from rest_framework.decorators import api_view
@@ -18,7 +21,7 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
 from leaderboards import models
-from .models import Leaderboard, Player, PlaytimeEx, HourlyPlayerCount, ChivstatsSumstats, DailyPlaytime, leaderboard_classes
+from .models import Leaderboard, Player, PlaytimeEx, GlobalXp, HourlyPlayerCount, ChivstatsSumstats, DailyPlaytime, leaderboard_classes
 # import the leaderboard List since it should be defined just in one place
 from .models import (leaderboard_classes, LatestLeaderboard, ChivstatsSumstats)
 from .serializers import (LatestLeaderboardSerializer, PlayerSerializer)
@@ -28,15 +31,9 @@ from .utils import (humanize_leaderboard_name, organize_sidebar, create_leaderbo
 from geoip2.database import Reader
 from geoip2.errors import AddressNotFoundError, GeoIP2Error
 
-
-
 leaderboards = copy(leaderboard_classes);
-#For now simple alphabetical order
 leaderboards.sort(key=organize_sidebar);
-#list of dicts of url and readable text
 leaderboard_list_of_dict = create_leaderboard_list()
-
-
 
 def calculate_level_and_gold(xp):
     level_data = get_level_data()
@@ -50,24 +47,13 @@ def calculate_level_and_gold(xp):
             break
     return level, total_gold
 
-
-
 def player_progress_over_time(request, source_table='GlobalXp'):
-    # Get the source_table from the request
     source_table = request.GET.get('table_name', default='GlobalXp')  # Replace 'default_table_name' with your default table name
-
-    # Validate the source table name
     if source_table not in leaderboards:
-        # Handle invalid table name (e.g., return an error message)
         return HttpResponseBadRequest("Invalid source table name")
-
-    # Collect PlayFab IDs from the request
     playfab_ids_input = request.GET.get('playfabids')  # Example: 'id1,id2,id3'
     playfab_ids = playfab_ids_input.split(',') if playfab_ids_input else []
-
-    # Modify the query to filter based on the provided PlayFab IDs
     playfab_ids_filter = f"AND playfabid IN ({','.join(['%s' for _ in playfab_ids])})" if playfab_ids else ""
-
     query = f"""
     WITH RecentSerialNumbers AS (
         SELECT DISTINCT LEFT(CAST(serialnumber AS TEXT), 8) AS date_part, serialnumber
@@ -116,20 +102,17 @@ def player_progress_over_time(request, source_table='GlobalXp'):
     WHERE p.playtime_increment IS NOT NULL AND s.source_increment IS NOT NULL
     ORDER BY p.playfabid, p.date_part;
     """
-
     with connection.cursor() as cursor:
         if playfab_ids:
             cursor.execute(query, playfab_ids)
         else:
             cursor.execute(query)
         rows = cursor.fetchall()
-
-    # Fetch player details and filter out badlisted players
     playfabids = [row[0] for row in rows]
     players = Player.objects.filter(playfabid__in=playfabids, badlist=False).in_bulk(field_name='playfabid')
-
     grouped_data = defaultdict(list)
     max_gains_dict = {}
+
     for row in rows:
         player = players.get(row[0])
         if player:
@@ -140,18 +123,10 @@ def player_progress_over_time(request, source_table='GlobalXp'):
                 'playtime_increment': row[2]
             }
             grouped_data[player.most_common_alias()].append(gain_data)
-
-            # Update max gain for each player
             if player.most_common_alias() not in max_gains_dict or gain_data['source_increment'] > max_gains_dict[player.most_common_alias()]['source_increment']:
                 max_gains_dict[player.most_common_alias()] = gain_data
-
-    # Convert the max gains dictionary to a sorted list of tuples
     max_gains = sorted(max_gains_dict.items(), key=lambda x: x[1]['source_increment'], reverse=True)
-
-    # Convert the grouped data to a JSON string
     json_data = json.dumps(grouped_data)
-
-    # Include valid_table_names in the context
     return render(request, 'leaderboards/player_progress.html', {
         'leaderboards': leaderboard_list_of_dict, 
         'data': json_data, 
@@ -161,76 +136,50 @@ def player_progress_over_time(request, source_table='GlobalXp'):
         'playfab_ids_input': playfab_ids_input,
     })
 
-
 def merged_leaderboard_view(request):
-    # Get the latest serial numbers for DailyPlaytime and PlaytimeEx
     latest_serial_number_daily = DailyPlaytime.objects.latest('serialnumber').serialnumber
     latest_serial_number_ex = PlaytimeEx.objects.latest('serialnumber').serialnumber
 
-    # Aggregate data from DailyPlaytime with latest serial number
     playtime_data = DailyPlaytime.objects.filter(serialnumber=latest_serial_number_daily).values('playfabid').annotate(total_playtime=Sum('stat_value'))
-
-    # Aggregate data from PlaytimeEx with latest serial number
     playtimeex_data = PlaytimeEx.objects.filter(serialnumber=latest_serial_number_ex).values('playfabid').annotate(total_playtime=Sum('stat_value'))
-
-    # Combine and summarize the results
     combined_data = {}
     for entry in list(playtime_data) + list(playtimeex_data):
         key = entry['playfabid']
         combined_data[key] = combined_data.get(key, 0) + entry['total_playtime']
-
-    # Sort by total playtime in descending order and limit to top 1000
-    sorted_combined_data = sorted(combined_data.items(), key=lambda x: x[1], reverse=True)[:1000]
-
-    # Fetch player details for each playfabid
+    sorted_combined_data = sorted(combined_data.items(), key=lambda x: x[1], reverse=True)[:1000] #LIMIT TO TOP 1000 HERE.
     playfabids = [key for key, _ in sorted_combined_data]
     players = Player.objects.filter(playfabid__in=playfabids).in_bulk(field_name='playfabid')
 
-    # Prepare data for display with player details
     merged_leaderboard = []
     for playfabid, total_playtime in sorted_combined_data:
         player = players.get(playfabid)
         if player:
             merged_leaderboard.append({
                 'playfabid': playfabid,
-                'player_name': player.most_common_alias(),  # Assuming 'most_common_alias' method returns the friendly name
+                'player_name': player.most_common_alias(), 
                 'total_playtime': total_playtime,
-                'profile_url': f'/leaderboards/player/{playfabid}'  # Modify this URL to the correct path for player profiles
+                'profile_url': f'/leaderboards/player/{playfabid}'
             })
-
-    # Render in template
     context = {'merged_leaderboard': merged_leaderboard}
     return render(request, 'leaderboards/merged_leaderboard_view.html', context)
 
-
-
-
-
 def get_meta_sumstats(request):
     latest_entry = ChivstatsSumstats.objects.order_by('-serial_date').first()
-
-    # Initialize a dictionary to hold the context
     context = {
         'latest_entry': latest_entry,
         'unique_players': latest_entry.unique_players,
         'daily_players': latest_entry.daily_players,
     }
-
-    # Loop through the leaderboard classes to fetch the latest data for each
     for class_name in leaderboard_classes:
         ModelClass = apps.get_model('leaderboards', class_name)
         latest_data = ModelClass.objects.order_by('-serialnumber').first()
         context[f"{class_name.lower()}_latest"] = latest_data.stat_value if latest_data else None
-
     return render(request, 'leaderboards/meta_sumstats.html', context)
-
 
 def show_games(request):
     with open('/tmp/currentgames', 'r') as f:
         data = json.load(f)
-
     reader = Reader('/home/webchiv/GeoLite2-City.mmdb')
-
     for game in data['Data']['Games']:
         try:
             response = reader.city(game['ServerIPV4Address'])
@@ -242,14 +191,12 @@ def show_games(request):
 
     populated_server_count = 0
     for game in data['Data']['Games']:
-        if len(game['PlayerUserIds']) > 0:  # Adjust this condition based on how you determine if a server is populated
+        if len(game['PlayerUserIds']) > 0:
             populated_server_count += 1
-
-    # Include the leaderboards and the populated_server_count in the context
     context = {
         'data': data,
-        'leaderboards': leaderboard_list_of_dict,  # This is the line you'll want to add
-        'populated_server_count': populated_server_count  # Add this line to include the populated_server_count
+        'leaderboards': leaderboard_list_of_dict,
+        'populated_server_count': populated_server_count
     }
 
     return render(request, 'leaderboards/show_games.html', context)
@@ -262,7 +209,7 @@ def get_hourly_player_count(request):
         data = list(HourlyPlayerCount.objects.filter(player_count__gte=0).values('timestamp_hour', 'player_count'))
         return JsonResponse(data, safe=False)
     else:
-        context = get_leaderboards_context()  # Get the leaderboards context
+        context = get_leaderboards_context()
         return render(request, 'leaderboards/hourly_graph.html', context)
 
 def tattle(request):
@@ -270,7 +217,7 @@ def tattle(request):
     player_data = []
     for player in players:
         player_data.append({
-            'playfabid': player.playfabid,  # Include the playfabid field
+            'playfabid': player.playfabid,
             'badlist_reason': player.badlist_reason,
             'badlist_timestamp': player.badlist_timestamp,
             'most_common_alias': player.most_common_alias(),
@@ -281,11 +228,20 @@ def tattle(request):
     return render(request, 'leaderboards/tattle.html', context)
 
 def player_search(request):
-    search_query = request.GET.get('search_query', '')
-    search_query = search_query.strip()
+    search_query = request.GET.get('search_query', '').strip()
     if search_query:
         players = Player.objects.filter(alias_history__icontains=search_query)
-        players = [{'playfabid': player.playfabid, 'name': player.most_common_alias()} for player in players]
+        players_data = []
+        for player in players:
+            last_seen_formatted = None
+            if player.lastseen_serial:
+                last_seen_formatted = datetime.strptime(str(player.lastseen_serial)[:8], '%Y%m%d').strftime('%Y-%m-%d')
+            players_data.append({
+                'playfabid': player.playfabid,
+                'name': player.most_common_alias(),
+                'last_seen': last_seen_formatted or 'Never'
+            })
+        players = sorted(players_data, key=lambda x: (x['last_seen'] != 'Never', x['last_seen']), reverse=True)
     else:
         players = []
     context = {
@@ -295,17 +251,21 @@ def player_search(request):
     }
     return render(request, 'leaderboards/player_search.html', context)
 
+def format_last_seen(last_seen_serial):
+    if last_seen_serial:
+        last_seen_str = str(last_seen_serial)
+        formatted_date = datetime.strptime(last_seen_str[:8], '%Y%m%d').strftime('%Y-%m-%d')
+        return formatted_date
+    else:
+        return 'Never'
 
-#Is this used?  Can we remove?
 def leaderboard_name_to_url(leaderboard_name):
     if leaderboard_name.startswith('ExperienceWeapon'):
         leaderboard_name = leaderboard_name.replace('ExperienceWeapon', '')
     return re.sub(r'(?<!^)([A-Z])', r'-\1', leaderboard_name).lower()
 
-#is this used?
 def url_to_leaderboard_name(url):
     formatted_url = url.replace('-', ' ').title().replace(' ', '')
-    print(f'Formatted URL: {formatted_url}')  # Debugging line
     if not any(formatted_url.startswith(word) for word in
                ['GlobalXp', 'Playtime', 'PlaytimeEx' 'DailyPlaytime', 'ExperienceArcher', 'ExperienceFootman', 'ExperienceVanguard',
                 'ExperienceKnight']):
@@ -313,11 +273,10 @@ def url_to_leaderboard_name(url):
     return formatted_url
 
 def get_top_gainers(time_period, table_name, page=1, items_per_page=50):
-    cache_key = f'top_gainers_{time_period}_{table_name}_{page}_{items_per_page}'  # Create a unique cache key
-    cached_data = cache.get(cache_key)  # Try to get data from the cache
-
+    cache_key = f'top_gainers_{time_period}_{table_name}_{page}_{items_per_page}'
+    cached_data = cache.get(cache_key)
     if cached_data:
-        return cached_data  # If cache exists, return it
+        return cached_data
 
     offset = (page - 1) * items_per_page
     sql_query = f"""
@@ -357,24 +316,18 @@ def get_top_gainers(time_period, table_name, page=1, items_per_page=50):
     with connection.cursor() as cursor:
         cursor.execute(sql_query)
         results = cursor.fetchall()
-
-        # Convert list of tuples to list of dictionaries
         column_names = [col[0] for col in cursor.description]
         leaderboard_data = [
             dict(zip(column_names, row))
             for row in results
         ]
     cache.set(cache_key, leaderboard_data, 3600)
-
     return leaderboard_data
 
-# New view for the top gainers leaderboard
 def top_gainers_leaderboard(request):
-    page = int(request.GET.get('page', 1))  # Default to page 1
-    time_period = request.GET.get('time_period', '7')  # Default to 7 days
-    table_name = request.GET.get('table_name', 'experienceknight')  # Default to 'experienceknight'
-    
-    # Validate time_period and table_name against a pre-set list to prevent SQL injection
+    page = int(request.GET.get('page', 1))
+    time_period = request.GET.get('time_period', '7')
+    table_name = request.GET.get('table_name', 'experienceknight')
     valid_time_periods = ['2', '7', '14', '30']
     valid_table_names = [
         ("globalxp", "Global XP"),
@@ -434,27 +387,22 @@ def top_gainers_leaderboard(request):
         ("experienceweaponmesser", "Experience Weapon Messer"),
         ("experienceweaponheavycrossbow", "Experience Weapon Heavy Crossbow")
     ]
-   
     leaderboard_data = get_top_gainers(time_period, table_name, page)
 
-    # Fetch the most_common_alias for each playfabid
     for entry in leaderboard_data:
         playfabid = entry['playfabid']
         player = Player.objects.get(playfabid=playfabid)
         entry['most_common_alias'] = player.most_common_alias()
-
-    error_message = None  # Initialize error_message as None (i.e., no error)
-    
+    error_message = None
     if time_period not in valid_time_periods or table_name not in [x[0] for x in valid_table_names]:
         error_message = 'Invalid parameters'
-    
     context = {
         'leaderboard_data': leaderboard_data,
         'leaderboards': leaderboard_list_of_dict,
         'time_period': time_period,
         'table_name': table_name,
         'table_names': valid_table_names,
-        'error_message': error_message  # Add the error_message to the context
+        'error_message': error_message
     }
     
     return render(request, 'leaderboards/top_gainers_leaderboard.html', context)
@@ -473,13 +421,12 @@ def index(request):
     return render(request, 'leaderboards/index.html', context)
 
 def leaderboard(request, leaderboard_name):
-    leaderboard_name = leaderboard_name.replace(' ', '')  # Remove the space
+    leaderboard_name = leaderboard_name.replace(' ', '')
     search_query = request.GET.get('search_query', '')
     page_number = request.GET.get('page', 1)
     results_per_page = request.GET.get('results_per_page', 50)
     show_recent_players = request.GET.get('recent_players') == 'on'
-    hard_coded_date = 20231107
-
+    hard_coded_date = 20231107 #HARDCODED DATE OF RECENT PATCH
     try:
         page_number = int(page_number)
     except ValueError:
@@ -488,21 +435,16 @@ def leaderboard(request, leaderboard_name):
         results_per_page = int(results_per_page)
     except ValueError:
         results_per_page = 50
-
     if leaderboard_name not in leaderboards:
         raise Http404("Leaderboard does not exist")
-
     latest_serial_number = LatestLeaderboard.objects.get(leaderboard_name=leaderboard_name).serialnumber
     players_with_badlist = Player.objects.filter(badlist=True).values_list('playfabid', flat=True)
     leaderboard_model = apps.get_model(app_label='leaderboards', model_name=leaderboard_name)
     leaderboard_data_query = leaderboard_model.objects.filter(serialnumber=latest_serial_number).select_related('playfabid').exclude(playfabid__in=players_with_badlist).order_by('-stat_value')
-
     if show_recent_players:
         leaderboard_data_query = leaderboard_data_query.filter(playfabid__lastseen_serial__gt=hard_coded_date)
-
     if search_query:
         leaderboard_data_query = leaderboard_data_query.filter(playfabid__alias_history__icontains=search_query)
-
     paginator = Paginator(leaderboard_data_query, results_per_page)
     page_obj = paginator.get_page(page_number)
     latest_update = datetime.strptime(str(latest_serial_number), "%Y%m%d%H%M")
@@ -521,10 +463,7 @@ def leaderboard(request, leaderboard_name):
         'search_query': search_query,
         'show_recent_players': show_recent_players,
     }
-
     return render(request, 'leaderboards/leaderboard.html', context)
-
-
 
 def get_leaderboard_data(leaderboard_name, page_number, results_per_page=50, search_query=''):
     if leaderboard_name not in leaderboards:
@@ -582,12 +521,12 @@ def player_profile(request, playfabid):
                 'stat_value': stat_value,
                 'rank': rank,
                 'title': humanize_leaderboard_name(leaderboard_name),
-                'level': level,  # Add level
-                'total_gold': total_gold,  # Add total gold
+                'level': level,
+                'total_gold': total_gold, 
             })
     playtime_data = []
     today = datetime.now().date()
-    for i in range(14):  # Last 7 days including today
+    for i in range(14): 
         date = today - timedelta(days=i)
         date_str = date.strftime("%Y%m%d")
         highest_stat_value = DailyPlaytime.objects.filter(
@@ -653,7 +592,6 @@ def go_touch_grass_leaderboard(request):
     }
     return render(request, 'leaderboards/go_touch_grass_leaderboard.html', context)
 
-
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 100
     page_size_query_param = 'page_size'
@@ -662,54 +600,32 @@ class PlayerListAPIView(generics.ListAPIView):
     queryset = Player.objects.all()
     serializer_class = PlayerSerializer
     pagination_class = StandardResultsSetPagination
-
 class LatestLeaderboardPagination(PageNumberPagination):
     page_size = 100
     page_size_query_param = 'page_size'
-
 class LatestLeaderboardListAPIView(generics.ListAPIView):
     queryset = LatestLeaderboard.objects.all().order_by('-serialnumber')
     serializer_class = LatestLeaderboardSerializer
     pagination_class = LatestLeaderboardPagination
-
 from django.core.exceptions import ObjectDoesNotExist
 
 @api_view(['GET'])
 def get_leaderboard(request):
     leaderboard_name = request.GET.get('leaderboard_name')
-        
-    # Log the leaderboard_name for debugging
-    print(f'leaderboard_name: {leaderboard_name}')
-
-    # Try to get the serializer class
     serializer_class_name = f"{leaderboard_name}Serializer"
-    serializer_class = globals().get(serializer_class_name)
-
-    # Log the serializer class for debugging
-    print(f'serializer_class: {serializer_class}')
-    
+    serializer_class = globals().get(serializer_class_name)  
     if serializer_class:
         try:
-            # Query the corresponding model
             model_class = globals()[leaderboard_name]
             data = model_class.objects.all()
-
-            # Paginate the data
             paginator = PageNumberPagination()
             paginated_data = paginator.paginate_queryset(data, request)
-
-            # Serialize the data
             serializer = serializer_class(paginated_data, many=True)
-
             return paginator.get_paginated_response(serializer.data)
         except ObjectDoesNotExist:
             return Response({'error': f'{leaderboard_name} does not exist'}, status=404)
         except Exception as e:
-            # Catch any other exception and log it
-            print(f'Error: {str(e)}')
             return Response({'error': 'An error occurred while processing the request'}, status=500)
-    
-    # Handle other cases or return an error if not found
     return Response({'error': 'Invalid leaderboard_name'}, status=400)
 
 
@@ -719,10 +635,7 @@ class LeaderboardListAPIView(generics.ListAPIView):
     def get_queryset(self):
         leaderboard_name = self.request.query_params.get('leaderboard_name', None)
         if leaderboard_name is not None:
-            # Assuming that your dynamically created leaderboard models have a naming pattern {leaderboard_name}Leaderboard
             leaderboard_model = globals().get(f"{leaderboard_name}Leaderboard", Leaderboard)
-            # Get the most recent serial number for the given leaderboard
             latest_serial_number = leaderboard_model.objects.latest('serialnumber').serialnumber
-            # Filter the data based on the most recent serial number
             return leaderboard_model.objects.filter(serialnumber=latest_serial_number)
-        return Leaderboard.objects.none()  # Return empty queryset if no leaderboard_name parameter
+        return Leaderboard.objects.none()
