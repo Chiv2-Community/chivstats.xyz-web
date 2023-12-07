@@ -9,7 +9,7 @@ from django.core.cache import cache
 from django.db import connection
 from django.db.models import Avg, Max, Sum, Q, F, Subquery, OuterRef
 from django.http import Http404, JsonResponse, HttpResponseBadRequest
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.views.decorators.cache import cache_page
 
 from django.db.models import F, Value, IntegerField
@@ -228,6 +228,13 @@ def tattle(request):
 
 def player_search(request):
     search_query = request.GET.get('search_query', '').strip()
+    
+    # Check if the search query matches the PlayerID pattern
+    if re.match(r'^[A-F0-9]{16}$', search_query):
+        # Redirect to the player's profile if it's a valid PlayerID
+        return redirect('leaderboards:player_profile', playfabid=search_query)
+
+    players = []
     if search_query:
         players = Player.objects.filter(alias_history__icontains=search_query)
         players_data = []
@@ -241,8 +248,7 @@ def player_search(request):
                 'last_seen': last_seen_formatted or 'Never'
             })
         players = sorted(players_data, key=lambda x: (x['last_seen'] != 'Never', x['last_seen']), reverse=True)
-    else:
-        players = []
+
     context = {
         'players': players,
         'search_query': search_query,
@@ -497,6 +503,12 @@ def player_profile(request, playfabid):
         player = Player.objects.get(playfabid=playfabid)
     except Player.DoesNotExist:
         raise Http404("Player does not exist")
+
+    if player.badlist:  # Check if the player is blocked
+        # Render a template or return a response indicating the player is blocked
+        context = {'message': 'This player is blocked.'}
+        return render(request, 'leaderboards/blocked_player.html', context)
+
     leaderboard_data = []
     latest_serial_numbers = {}
 
@@ -523,9 +535,10 @@ def player_profile(request, playfabid):
                 'level': level,
                 'total_gold': total_gold, 
             })
+
     playtime_data = []
     today = datetime.now().date()
-    for i in range(14): 
+    for i in range(14):
         date = today - timedelta(days=i)
         date_str = date.strftime("%Y%m%d")
         highest_stat_value = DailyPlaytime.objects.filter(
@@ -537,6 +550,7 @@ def player_profile(request, playfabid):
                 'date': date.strftime("%B %d, %Y"),
                 'playtime': highest_stat_value,
             })
+
     context = {
         'playfabid': playfabid,
         'player': player,
