@@ -21,9 +21,8 @@ from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 
 from leaderboards import models
-from .models import Leaderboard, Player, PlaytimeEx, GlobalXp, HourlyPlayerCount, ChivstatsSumstats, DailyPlaytime, leaderboard_classes
-# import the leaderboard List since it should be defined just in one place
-from .models import (leaderboard_classes, LatestLeaderboard, ChivstatsSumstats)
+from .models import (
+    Leaderboard, Player, PlaytimeEx, GlobalXp, HourlyPlayerCount, ChivstatsSumstats, DailyPlaytime, leaderboard_classes, LatestLeaderboard)
 from .serializers import (LatestLeaderboardSerializer, PlayerSerializer)
 from .serializers import LeaderboardSerializer
 from .utils import (humanize_leaderboard_name, organize_sidebar, create_leaderboard_list, read_yaml_news, to_json, get_level_data)

@@ -37,25 +37,24 @@
       gtag('config', 'G-EQG3BMRF63');
     </script>
     <h1>Player Search</h1><br>
-    Search the known players data for a player name. This query may take a little while, be patient.<br>
-    Click on the player's ID to view their profile.<br><br>Three character minimum.<br>
+    Search the known players data for a player name.<br>Click on the player's ID to view their profile.<br>
     <form method="GET" action="{% url 'leaderboards:player_search' %}">
-        <input type="text" name="search_query" placeholder="Enter player name">
+        <input type="text" name="search_query" placeholder="Enter player name" value="{{ search_query }}">
         <button type="submit">Search</button>
+        <button type="button" onclick="window.location.href='{% url 'leaderboards:player_search' %}';">Clear</button>
     </form>
 
-    <!-- Buttons for actions -->
-    <button id="copyToClipboard" class="btn btn-primary">Copy Selected IDs to Clipboard</button>
-    <button id="sendToProgressCharting" class="btn btn-success">Send to Progress Charting</button>
-
     {% if players %}
+        <br>
         <h2>Search Results</h2>
+        <button id="copyToClipboard" class="btn btn-primary">Copy Selected IDs to Clipboard</button>
+        <button id="sendToProgressCharting" class="btn btn-success">Send to Progress Charting</button>
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th class="checkbox-column"></th>
+                    <th class="checkbox-column">📈</th>
                     <th class="name-column">Common Alias</th>
-                    <th class="playfabid-column">PlayFab ID</th>
+                    <th class="playfabid-column">Player ID</th>
                     <th class="date-column">Last Seen</th>
                 </tr>
             </thead>
@@ -70,8 +69,8 @@
                 {% endfor %}
             </tbody>
         </table>
-    {% else %}
-        <p>No players found.</p>
+    {% else %}<br><br>
+        <p>Three character minimum. No players found.</p>
     {% endif %}
 
     <script>
