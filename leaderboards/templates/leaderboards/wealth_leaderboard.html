@@ -1,0 +1,63 @@
+{% extends 'leaderboards/base.html' %}
+{% block content %}
+<style>
+    .rank-column {
+        width: 50px;  /* Adjust the width as needed */
+        text-align: center;
+    }
+</style>
+<div class="container">
+    <h1>Wealth Leaderboard</h1>
+    <div>
+        <form action="{% url 'leaderboards:wealth_leaderboard' %}" method="get">
+            <input type="radio" id="gold" name="wealth_type" value="gold" {% if wealth_type == 'gold' %}checked{% endif %}>
+            <label for="gold">Gold</label>
+            <input type="radio" id="crowns" name="wealth_type" value="crowns" {% if wealth_type == 'crowns' %}checked{% endif %}>
+            <label for="crowns">Crowns</label>
+            <input type="submit" value="Filter">
+        </form>
+    </div>
+
+    <h2>{{ wealth_type|title }} Leaderboard</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Position</th>
+                <th>Name</th>
+                <th>{{ wealth_type|title }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for player in players %}
+                <tr>
+                    <td class="rank-column">{{ player.rank }}</td>
+                    <td><a href="{% url 'leaderboards:player_profile' player.playfabid %}">{{ player.most_common_alias }}</a></td>
+                    <td>{{ player.wealth }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <nav aria-label="Page navigation">
+        <ul class="pagination">
+            {% if players.has_previous %}
+                <li class="page-item"><a class="page-link" href="?wealth_type={{ wealth_type }}&page=1">First</a></li>
+                <li class="page-item"><a class="page-link" href="?wealth_type={{ wealth_type }}&page={{ players.previous_page_number }}">Previous</a></li>
+            {% endif %}
+            {% for num in players.paginator.page_range %}
+                {% if num >= players.number|add:'-3' and num <= players.number|add:'3' %}
+                    {% if players.number == num %}
+                        <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                    {% else %}
+                        <li class="page-item"><a class="page-link" href="?wealth_type={{ wealth_type }}&page={{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+            {% if players.has_next %}
+                <li class="page-item"><a class="page-link" href="?wealth_type={{ wealth_type }}&page={{ players.next_page_number }}">Next</a></li>
+                <li class="page-item"><a class="page-link" href="?wealth_type={{ wealth_type }}&page={{ players.paginator.num_pages }}">Last</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endblock %}

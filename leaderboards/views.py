@@ -46,6 +46,57 @@ def calculate_level_and_gold(xp):
             break
     return level, total_gold
 
+
+def peasant_caps_leaderboard(request):
+    players_with_caps = Player.objects.filter(peasant_cap=True).order_by('peasant_cap_date')
+    
+    # Add last_seen_formatted field
+    for player in players_with_caps:
+        if player.lastseen_serial:
+            # Convert the serial number to a date string
+            last_seen_formatted = datetime.strptime(str(player.lastseen_serial)[:8], '%Y%m%d').strftime('%Y-%m-%d')
+            player.last_seen_formatted = last_seen_formatted
+        else:
+            player.last_seen_formatted = 'Never'
+
+    context = {
+        'players': players_with_caps,
+        'leaderboards': leaderboard_list_of_dict,
+    }
+    return render(request, 'leaderboards/peasant_caps_leaderboard.html', context)
+
+from django.core.paginator import Paginator
+
+def wealth_leaderboard(request):
+    wealth_type = request.GET.get('wealth_type', 'gold')  # Default to 'gold' if not specified
+    page = request.GET.get('page', 1)
+
+    if wealth_type == 'gold':
+        players_query = Player.objects.all().order_by('-gd')
+    else:  # Default to Crowns if wealth_type is not 'gold'
+        players_query = Player.objects.all().order_by('-cr')
+
+    paginator = Paginator(players_query, 50)  # Show 50 players per page
+    players = paginator.get_page(page)
+
+    start_index = players.start_index()  # Get the start index for the current page
+
+    # Add 'wealth' and 'rank' attributes to each player object
+    for index, player in enumerate(players, start=start_index):
+        player.wealth = player.gd if wealth_type == 'gold' else player.cr
+        player.rank = index
+
+    context = {
+        'players': players,
+        'wealth_type': wealth_type,
+        'leaderboards': leaderboard_list_of_dict,
+    }
+    return render(request, 'leaderboards/wealth_leaderboard.html', context)
+
+
+
+
+
 def player_progress_over_time(request, source_table='GlobalXp'):
     source_table = request.GET.get('table_name', default='GlobalXp')  # Replace 'default_table_name' with your default table name
     if source_table not in leaderboards:

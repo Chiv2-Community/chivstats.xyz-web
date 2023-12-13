@@ -1,0 +1,116 @@
+{% extends "leaderboards/base.html" %}
+{% block content %}
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-EQG3BMRF63"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-EQG3BMRF63');
+</script>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Peasant Caps Leaderboard</title>
+    <style>
+        /* Custom styles can go here */
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Peasant Caps Leaderboard</h1>
+        <br>This was scraped from player inventories. Click on a column to sort by that column.<br>
+        <table id="sortableTable" class="table">
+            <thead>
+                <tr>
+                    <th id="Name" onclick="sortTable('sortableTable', 0)">Name <i class="bi bi-arrow-down-up"></i></th>
+                    <th id="lastSeen" onclick="sortTable('sortableTable', 1)">Last Seen Playing <i class="bi bi-arrow-down-up"></i></th>
+                    <th id="capDate" onclick="sortTable('sortableTable', 2)">Date Cap Awarded <i class="bi bi-arrow-down-up"></i></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in players %}
+                    <tr>
+                        <td>
+                            <!-- Link to player profile -->
+                            <a href="{% url 'leaderboards:player_profile' player.playfabid %}">
+                                {{ player.most_common_alias }}
+                            </a>
+                        </td>
+                        <td>{{ player.last_seen_formatted }}</td>
+                        <td>{{ player.peasant_cap_date|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="3">No players found.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+  <!-- Bootstrap Icons CDN -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css">
+
+  <!-- Bootstrap JS and its dependencies -->
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- JavaScript Sorting Function -->
+    <script>
+        function sortTable(tableId, columnIndex) {
+            var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+            table = document.getElementById(tableId);
+            switching = true;
+            dir = "asc"; 
+
+            // Code to switch icons based on direction
+            var header = table.rows[0].getElementsByTagName("TH")[columnIndex];
+            var icons = header.getElementsByTagName("I");
+            if (icons.length > 0) {
+                var icon = icons[0];
+                if (dir === "asc") {
+                    icon.className = "bi bi-arrow-down";
+                } else {
+                    icon.className = "bi bi-arrow-up";
+                }
+            }
+
+            while (switching) {
+            switching = false;
+            rows = table.rows;
+
+            for (i = 1; i < (rows.length - 1); i++) {
+                shouldSwitch = false;
+                x = rows[i].getElementsByTagName("TD")[columnIndex];
+                y = rows[i + 1].getElementsByTagName("TD")[columnIndex];
+
+                if (dir == "asc") {
+                    if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                } else if (dir == "desc") {
+                    if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                        shouldSwitch = true;
+                        break;
+                    }
+                }
+            }
+            if (shouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true;
+                switchcount ++;      
+            } else {
+                if (switchcount == 0 && dir == "asc") {
+                    dir = "desc";
+                    switching = true;
+                }
+            }
+        }
+    }
+    </script>
+</body>
+</html>
+{% endblock %}

@@ -36,6 +36,10 @@ class Player(models.Model):
     badlist_reason = models.CharField(max_length=255, blank=True, null=True)
     badlist_timestamp = models.DateTimeField(blank=True, null=True)
     lastseen_serial = models.IntegerField()
+    peasant_cap = models.BooleanField(default=False)
+    peasant_cap_date = models.DateTimeField(null=True, blank=True)
+    gd = models.IntegerField(default=0)  # Assuming 'gd' represents an integer value
+    cr = models.IntegerField(default=0)  # Similarly for 'cr'
     
     def aliases(self):
         if self.alias_history:

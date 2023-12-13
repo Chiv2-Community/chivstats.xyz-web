@@ -1,0 +1,35 @@
+<!-- sidebar.html -->
+<ul class="nav flex-column">
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'leaderboards:index' %}">Home</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="https://discord.gg/chiv2unchained">Chivalry Unchained Discord</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'leaderboards:player_search' %}">Player Search</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'leaderboards:hourly_player_count' %}">Hourly Player Count</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'leaderboards:show_games' %}">Server List</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'leaderboards:top_gainers_leaderboard' %}">Meta: Top Gainers</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'leaderboards:player_progress' %}"><b>Meta: Graph Progress(XP)</b></a>
+    </li>
+    {% for item in leaderboards %}
+        {% if item.category == 'category' %}
+            <li class="nav-item">
+                <span class="nav-link font-weight-bold">Leaderboards {{ item.leaderboard }}</span>
+            </li>
+        {% else %}
+            <li class="nav-item">
+                <a class="nav-link" href="{% url 'leaderboards:leaderboard' item.url %}">{{ item.leaderboard }}</a>
+            </li>
+        {% endif %}
+    {% endfor %}
+</ul>

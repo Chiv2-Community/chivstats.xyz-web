@@ -92,7 +92,13 @@
                             <a class="nav-link" href="{% url 'leaderboards:top_gainers_leaderboard' %}">Meta: Top Gainers</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'leaderboards:player_progress' %}"><b>Meta: Graph Progress(XP)</b></a>
+                            <a class="nav-link" href="{% url 'leaderboards:wealth_leaderboard' %}"><b>New: Wealth</b></a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'leaderboards:peasant_caps_leaderboard' %}"><b>New: Peasant Caps</b></a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'leaderboards:player_progress' %}">Meta: Graph Progress(XP)</a>
                         </li>
                         {% block sidebar %}
                         {% for item in leaderboards %}
