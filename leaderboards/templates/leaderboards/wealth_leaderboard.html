@@ -7,7 +7,7 @@
     }
 </style>
 <div class="container">
-    <h1>Wealth Leaderboard</h1>
+    <h1>Wealth Leaderboard</h1><br>This was a one-time data gathering and will not be updated. Click on a column to sort by that column.<br>
     <div>
         <form action="{% url 'leaderboards:wealth_leaderboard' %}" method="get">
             <input type="radio" id="gold" name="wealth_type" value="gold" {% if wealth_type == 'gold' %}checked{% endif %}>
