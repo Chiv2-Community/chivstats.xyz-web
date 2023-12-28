@@ -26,10 +26,10 @@
 <table class="table table-striped table-sm" id="leaderboardTable">
     <thead>
         <tr>
-            <th onclick="sortTable('leaderboardTable', 0)">Leaderboards <i class="bi bi-arrow-down-up"></i></th>
-            <th onclick="sortTable('leaderboardTable', 1)">Rank <i class="bi bi-arrow-down-up"></i></th>
-            <th onclick="sortTable('leaderboardTable', 2)">Value <i class="bi bi-arrow-down-up"></i></th>
-            <th onclick="sortTable('leaderboardTable', 3)">Level <i class="bi bi-arrow-down-up"></i></th>
+            <th onclick="sortTable('leaderboardTable', 0, 'string')">Leaderboards <i class="bi bi-arrow-down-up"></i></th>
+            <th onclick="sortTable('leaderboardTable', 1, 'numeric')">Rank <i class="bi bi-arrow-down-up"></i></th>
+            <th onclick="sortTable('leaderboardTable', 2, 'numeric')">Value <i class="bi bi-arrow-down-up"></i></th>
+            <th onclick="sortTable('leaderboardTable', 3, 'numeric')">Level <i class="bi bi-arrow-down-up"></i></th>
         </tr>
     </thead>
     <tbody>
@@ -132,49 +132,53 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css">
 
 <script>
-    function sortTable(tableId, columnIndex) {
+    function sortTable(tableId, columnIndex, dataType) {
         var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
         table = document.getElementById(tableId);
         switching = true;
-        dir = "asc"; 
-    
-        // Code to switch icons based on direction
-        var header = table.rows[0].getElementsByTagName("TH")[columnIndex];
-        var icons = header.getElementsByTagName("I");
-        if (icons.length > 0) {
-            var icon = icons[0];
-            if (dir === "asc") {
-                icon.className = "bi bi-arrow-down";
-            } else {
-                icon.className = "bi bi-arrow-up";
-            }
-        }
-    
+        dir = "asc";
+
         while (switching) {
             switching = false;
             rows = table.rows;
-    
+
             for (i = 1; i < (rows.length - 1); i++) {
                 shouldSwitch = false;
                 x = rows[i].getElementsByTagName("TD")[columnIndex];
                 y = rows[i + 1].getElementsByTagName("TD")[columnIndex];
-    
-                if (dir == "asc") {
-                    if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
-                        shouldSwitch = true;
-                        break;
+
+                if (dataType === 'numeric') {
+                    // For numeric sorting
+                    if (dir == "asc") {
+                        if (parseFloat(x.innerHTML) > parseFloat(y.innerHTML)) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else if (dir == "desc") {
+                        if (parseFloat(x.innerHTML) < parseFloat(y.innerHTML)) {
+                            shouldSwitch = true;
+                            break;
+                        }
                     }
-                } else if (dir == "desc") {
-                    if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
-                        shouldSwitch = true;
-                        break;
+                } else {
+                    // For string sorting (default)
+                    if (dir == "asc") {
+                        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else if (dir == "desc") {
+                        if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
                     }
                 }
             }
             if (shouldSwitch) {
                 rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
                 switching = true;
-                switchcount ++;      
+                switchcount++;      
             } else {
                 if (switchcount == 0 && dir == "asc") {
                     dir = "desc";
@@ -183,5 +187,6 @@
             }
         }
     }
-    </script>
+</script>
+
 {% endblock %}
