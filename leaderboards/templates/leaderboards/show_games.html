@@ -12,7 +12,7 @@
 {% block content %}
 <h1>Current Chivalry 2 Server List Games</h1>
 <br>
-This data is currently updated every 10 minutes. Click a column to sort on it.<br>
+This data is currently updated every 10 minutes. Click a column to sort on it. 3<br>
 Players: <b>{{ data.Data.PlayerCount }}</b>  Games: {{ data.Data.GameCount }}  (Populated: <b>{{ populated_server_count }}</b>)<br>
 <label for="regionFilter">Filter by Region: </label>
 <select id="regionFilter">
@@ -26,23 +26,23 @@ Players: <b>{{ data.Data.PlayerCount }}</b>  Games: {{ data.Data.GameCount }}  (
   <!-- Headers -->
   <thead>
     <tr>
-      <th onclick="sortTable(0, 'sortableTable')">Lobby Id</th>
-      <th onclick="sortTable(1, 'sortableTable')">Region</th>
-      <th onclick="sortTable(2, 'sortableTable')" style="min-width: 500px;">Server Name</th>
-      <th onclick="sortTable(3, 'sortableTable')">Max Players</th>
-      <th onclick="sortTable(4, 'sortableTable')">Connected Players</th>
-      <th onclick="sortTable(5, 'sortableTable')">Game Mode</th>
-      <th onclick="sortTable(6, 'sortableTable')">Map Name</th>
-      <th onclick="sortTable(8, 'sortableTable')">Location</th>
-      <th onclick="sortTable(9, 'sortableTable')">Server IPV4 Address</th>
-      <th onclick="sortTable(10, 'sortableTable')">Server Port</th>
-      <th onclick="sortTable(14, 'sortableTable')">PingPort_i</th>
-      <th onclick="sortTable(15, 'sortableTable')">QueryPort_i</th>
-      <th onclick="sortTable(11, 'sortableTable')">OFFICIAL_b</th>
-      <th onclick="sortTable(12, 'sortableTable')">Platform_s</th>
-      <th onclick="sortTable(16, 'sortableTable')">T0_c</th>
-      <th onclick="sortTable(18, 'sortableTable')">t1_c</th>
-      <th onclick="sortTable(19, 'sortableTable')">MTIM_i</th>
+      <th onclick="sortTable(0, 'numeric')">Lobby Id <i class="bi bi-arrow-down-up"></i></th>
+      <th onclick="sortTable(1, 'string')">Region <i class="bi bi-arrow-down-up"></i></th>
+      <th onclick="sortTable(2, 'string')" style="min-width: 500px;">Server Name <i class="bi bi-arrow-down-up"></i></th>
+      <th onclick="sortTable(3, 'numeric')">Max Players <i class="bi bi-arrow-down-up"></i></th>
+      <th onclick="sortTable(4, 'numeric')">Connected Players <i class="bi bi-arrow-down-up"></i></th>
+      <th onclick="sortTable(5, 'string')">Game Mode <i class="bi bi-arrow-down-up"></i></th>
+      <th onclick="sortTable(6, 'string')">Map Name <i class="bi bi-arrow-down-up"></i></th>
+      <th onclick="sortTable(7, 'string')">Location <i class="bi bi-arrow-down-up"></i></th>
+      <th onclick="sortTable(8, 'ip')">IPV4 Address <i class="bi bi-arrow-down-up"></i></th>
+      <th onclick="sortTable(9, 'numeric')">Server Port <i class="bi bi-arrow-down-up"></i></th>
+      <th onclick="sortTable(10, 'numeric')">PingPort_i <i class="bi bi-arrow-down-up"></i></th>
+      <th onclick="sortTable(11, 'numeric')">QueryPort_i <i class="bi bi-arrow-down-up"></i></th>
+      <th onclick="sortTable(12, 'string')">OFFICIAL_b <i class="bi bi-arrow-down-up"></i></th>
+      <th onclick="sortTable(13, 'string')">Platform_s <i class="bi bi-arrow-down-up"></i></th>
+      <th onclick="sortTable(14, 'string')">T0_c <i class="bi bi-arrow-down-up"></i></th>
+      <th onclick="sortTable(15, 'string')">t1_c <i class="bi bi-arrow-down-up"></i></th>
+      <th onclick="sortTable(16, 'numeric')">Match Timer <i class="bi bi-arrow-down-up"></i></th>
     </tr>
   </thead>
   <tbody>
@@ -71,84 +71,86 @@ Players: <b>{{ data.Data.PlayerCount }}</b>  Games: {{ data.Data.GameCount }}  (
   </tbody>
 </table>
 
-<script>
-    function sortTable(n, tableId) {
-    var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
-    table = document.getElementById(tableId);
-    switching = true;
-    dir = "asc";
-    while (switching) {
-        switching = false;
-        rows = table.rows;
-        for (i = 1; i < (rows.length - 1); i++) {
-            shouldSwitch = false;
-            x = rows[i].getElementsByTagName("TD")[n];
-            y = rows[i + 1].getElementsByTagName("TD")[n];
-            // Check if the two rows should switch place, based on the direction, asc or desc:
-            if (!isNaN(x.innerHTML) && !isNaN(y.innerHTML)) {
-                // If numerical values
-                if (dir == "asc") {
-                    if (Number(x.innerHTML) > Number(y.innerHTML)) {
-                        shouldSwitch = true;
-                        break;
-                    }
-                } else if (dir == "desc") {
-                    if (Number(x.innerHTML) < Number(y.innerHTML)) {
-                        shouldSwitch = true;
-                        break;
-                    }
-                }
-            } else {
-                // If string values
-                if (dir == "asc") {
-                    if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
-                        shouldSwitch = true;
-                        break;
-                    }
-                } else if (dir == "desc") {
-                    if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
-                        shouldSwitch = true;
-                        break;
-                    }
-                }
-            }
-        }
-        if (shouldSwitch) {
-            rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-            switching = true;
-            switchcount++;
-        } else {
-            if (switchcount == 0 && dir == "asc") {
-                dir = "desc";
-                switching = true;
-            }
-        }
-    }
-    }
+<!-- Include Bootstrap Icons CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.8.1/font/bootstrap-icons.min.css">
 
-    document.addEventListener('DOMContentLoaded', (event) => {
+<script>
+  function sortTable(columnIndex, dataType) {
+      var table = document.getElementById("sortableTable");
+      var switching = true;
+      var dir = "asc";
+      var switchcount = 0;
+      var currentDirIcon = dir === 'asc' ? 'bi-arrow-down' : 'bi-arrow-up';
+
+      // Update icons on all headers
+      var headers = table.getElementsByTagName("TH");
+      for (var k = 0; k < headers.length; k++) {
+        var icon = headers[k].getElementsByTagName("I")[0];
+        if (icon) {
+          icon.className = k === columnIndex ? `bi ${currentDirIcon}` : 'bi bi-arrow-down-up';
+        }
+      }
+
+      while (switching) {
+          switching = false;
+          var rows = table.rows;
+
+          for (var i = 1; i < (rows.length - 1); i++) {
+              var shouldSwitch = false;
+              var x = rows[i].getElementsByTagName("TD")[columnIndex];
+              var y = rows[i + 1].getElementsByTagName("TD")[columnIndex];
+
+              if (dataType === 'numeric') {
+                  if ((dir === "asc" && Number(x.innerHTML) > Number(y.innerHTML)) ||
+                      (dir === "desc" && Number(x.innerHTML) < Number(y.innerHTML))) {
+                      shouldSwitch = true;
+                  }
+              } else if (dataType === 'ip') {
+                  var ipA = convertIPtoNumber(x.innerHTML);
+                  var ipB = convertIPtoNumber(y.innerHTML);
+                  if ((dir === "asc" && ipA > ipB) || (dir === "desc" && ipA < ipB)) {
+                      shouldSwitch = true;
+                  }
+              } else {
+                  if ((dir === "asc" && x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) ||
+                      (dir === "desc" && x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase())) {
+                      shouldSwitch = true;
+                  }
+              }
+
+              if (shouldSwitch) {
+                  rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                  switching = true;
+                  switchcount++;
+              } else if (switchcount == 0 && dir === "asc") {
+                  dir = "desc";
+                  switching = true;
+              }
+          }
+      }
+  }
+
+  function convertIPtoNumber(ip) {
+      return ip.split('.').reduce(function(ipInt, octet) {
+          return (ipInt << 8) + parseInt(octet, 10);
+      }, 0) >>> 0;
+  }
+
+  document.addEventListener('DOMContentLoaded', (event) => {
       const regionFilter = document.getElementById('regionFilter');
       const table = document.getElementById('sortableTable');
       regionFilter.addEventListener('change', function() {
-        const selectedRegion = this.value;
-        for (let i = 1; i < table.rows.length; i++) {
-          const row = table.rows[i];
-          const regionCell = row.cells[1].innerText;
-          if (selectedRegion === 'all') {
-            row.style.display = '';
-          } else if (selectedRegion === 'NA' && regionCell.startsWith('na-')) {
-            row.style.display = '';
-          } else if (selectedRegion === 'OTHER' && !regionCell.startsWith('na-')) {
-            row.style.display = '';
-          } else {
-            row.style.display = 'none';
+          const selectedRegion = this.value;
+          for (let i = 1; i < table.rows.length; i++) {
+              const row = table.rows[i];
+              const regionCell = row.cells[1].innerText;
+              row.style.display = (selectedRegion === 'all' || 
+                                   (selectedRegion === 'NA' && regionCell.startsWith('na-')) || 
+                                   (selectedRegion === 'OTHER' && !regionCell.startsWith('na-'))) ? '' : 'none';
           }
-        }
       });
+  });
+</script>
 
-    });
-    </script>
-    
 
 {% endblock %}
-
