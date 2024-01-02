@@ -21,6 +21,9 @@
     <li class="nav-item">
         <a class="nav-link" href="{% url 'leaderboards:player_progress' %}"><b>Meta: Graph Progress(XP)</b></a>
     </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'leaderboards:ranked_combat_leaderboard' %}"><b>New: Ranked Combat</b></a>
+    </li>
     {% for item in leaderboards %}
         {% if item.category == 'category' %}
             <li class="nav-item">

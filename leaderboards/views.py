@@ -22,7 +22,7 @@ from rest_framework.response import Response
 
 from leaderboards import models
 from .models import (
-    Leaderboard, Player, PlaytimeEx, GlobalXp, HourlyPlayerCount, ChivstatsSumstats, DailyPlaytime, leaderboard_classes, LatestLeaderboard)
+    Leaderboard, Player, PlaytimeEx, GlobalXp, HourlyPlayerCount, ChivstatsSumstats, DailyPlaytime, leaderboard_classes, LatestLeaderboard, RankedPlayer)
 from .serializers import (LatestLeaderboardSerializer, PlayerSerializer)
 from .serializers import LeaderboardSerializer
 from .utils import (humanize_leaderboard_name, organize_sidebar, create_leaderboard_list, read_yaml_news, to_json, get_level_data)
@@ -92,6 +92,48 @@ def wealth_leaderboard(request):
         'leaderboards': leaderboard_list_of_dict,
     }
     return render(request, 'leaderboards/wealth_leaderboard.html', context)
+
+def ranked_combat_leaderboard(request):
+    page = request.GET.get('page', 1)
+    ranked_players_list = RankedPlayer.objects.all().order_by('-elo_rating')
+    
+    # Debugging: Check if the query set returns any results
+    print('Ranked Players List:', ranked_players_list)
+
+    paginator = Paginator(ranked_players_list, 50)  # Adjust the number per page as needed
+    ranked_players_page = paginator.get_page(page)
+
+    playfabids = [ranked_player.playfabid for ranked_player in ranked_players_page]
+    players = Player.objects.filter(playfabid__in=playfabids).in_bulk(field_name='playfabid')
+
+    players_data = []
+    for ranked_player in ranked_players_page:
+        # Get the related Player object from the pre-fetched players dictionary
+        player = players.get(ranked_player.playfabid)
+        
+        # Determine the display name using the order of precedence you've given
+        display_name = ranked_player.gamename or ranked_player.common_name or (player.most_common_alias() if player else None)
+        
+        # Append the player data with the chosen display name
+        players_data.append({
+            'playfabid': ranked_player.playfabid,
+            'common_name': display_name,
+            'elo_rating': ranked_player.elo_rating,
+            'matches': ranked_player.matches,
+            'kills': ranked_player.kills,
+            'deaths': ranked_player.deaths
+        })
+
+    # Debugging: Check if players_data is filled
+    print('Players Data:', players_data)
+
+    context = {
+        'players_data': players_data,  # Make sure this matches the template variable
+        'ranked_players_page': ranked_players_page,  # Add this to the context
+        'leaderboards': leaderboard_list_of_dict,
+    }
+
+    return render(request, 'leaderboards/ranked_combat_leaderboard.html', context)
 
 
 
@@ -550,8 +592,10 @@ def get_leaderboard_data(leaderboard_name, page_number, results_per_page=50, sea
     return leaderboard_data, page_obj, latest_update
 
 def player_profile(request, playfabid):
+    context = {}
     try:
         player = Player.objects.get(playfabid=playfabid)
+        ranked_player = RankedPlayer.objects.filter(playfabid=playfabid).first()
     except Player.DoesNotExist:
         raise Http404("Player does not exist")
 
@@ -602,7 +646,20 @@ def player_profile(request, playfabid):
                 'playtime': highest_stat_value,
             })
 
-    context = {
+    if ranked_player:
+        ranked_data = {
+            'elo_rating': ranked_player.elo_rating,
+            'matches': ranked_player.matches,
+            'kills': ranked_player.kills,
+            'deaths': ranked_player.deaths,
+            'discord_username': ranked_player.discord_username,
+            'common_name': ranked_player.common_name,
+            'gamename': ranked_player.gamename
+        }
+    else:
+        ranked_data = None
+
+    context.update({
         'playfabid': playfabid,
         'player': player,
         'aliases': player.aliases(),
@@ -610,7 +667,8 @@ def player_profile(request, playfabid):
         'latest_serial_numbers': latest_serial_numbers,
         'leaderboards': leaderboard_list_of_dict,
         'playtime_data': playtime_data,
-    }
+        'ranked_data': ranked_data,
+    })
     return render(request, 'leaderboards/playerprofile.html', context)
 
 def top_players_by_playtime(request):

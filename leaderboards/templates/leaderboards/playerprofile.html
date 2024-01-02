@@ -23,6 +23,15 @@
     {% endfor %}
 </ul>
 <br>
+{% if ranked_data %}
+    <h2>Ranked Player Details</h2>
+    <p>ELO Rating: {{ ranked_data.elo_rating }}</p>
+    <p>Matches: {{ ranked_data.matches }}</p>
+    <p>Kills: {{ ranked_data.kills }}</p>
+    <p>Deaths: {{ ranked_data.deaths }}</p>
+    <!-- Add other fields as needed -->
+{% endif %}
+<br>
 <table class="table table-striped table-sm" id="leaderboardTable">
     <thead>
         <tr>

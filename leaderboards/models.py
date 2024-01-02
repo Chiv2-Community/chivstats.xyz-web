@@ -108,3 +108,17 @@ for class_name in leaderboard_classes:
     serializer_class = type(f"{class_name}Serializer", (serializers.ModelSerializer,), {'Meta': serializer_meta_class})
     globals()[f"{class_name}Serializer"] = serializer_class
 
+class RankedPlayer(models.Model):
+    player_id = models.IntegerField(unique=True)
+    elo_rating = models.BigIntegerField(default=1500)
+    discord_username = models.CharField(max_length=255, blank=True)
+    kills = models.IntegerField(default=0)
+    deaths = models.IntegerField(default=0)
+    common_name = models.CharField(max_length=255, blank=True)
+    playfabid = models.CharField(max_length=255, blank=True)
+    discordid = models.BigIntegerField(blank=True, null=True)
+    matches = models.IntegerField(default=0)
+    gamename = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        db_table = 'ranked_players'

@@ -7,6 +7,7 @@ app_name = 'leaderboards'
 urlpatterns = [
     path('', views.index, name='index'),
     path('player_search/', views.player_search, name='player_search'),
+    path('ranked_combat/', views.ranked_combat_leaderboard, name='ranked_combat_leaderboard'),
     path('meta_sumstats/', views.get_meta_sumstats, name='meta_sumstats'),
     path('top_players/', views.top_players_by_playtime, name='top_players'),
     path('player_progress/', views.player_progress_over_time, name='player_progress'),

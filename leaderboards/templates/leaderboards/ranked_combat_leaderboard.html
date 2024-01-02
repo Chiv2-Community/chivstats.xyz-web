@@ -1,0 +1,43 @@
+{% extends 'leaderboards/base.html' %}
+
+{% block content %}
+<h1>Ranked Combat Leaderboard</h1>
+<p>Leaderboard based on ELO ratings in Ranked Combat.</p>
+<div class="pagination">
+    {% if ranked_players_page.has_previous %}
+        <a href="?page=1">First</a>
+        <a href="?page={{ ranked_players_page.previous_page_number }}">Previous</a>
+    {% endif %}
+    <span>Page {{ ranked_players_page.number }} of {{ ranked_players_page.paginator.num_pages }}</span>
+    {% if ranked_players_page.has_next %}
+        <a href="?page={{ ranked_players_page.next_page_number }}">Next</a>
+        <a href="?page={{ ranked_players_page.paginator.num_pages }}">Last</a>
+    {% endif %}
+</div>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Rank</th>
+            <th>Player</th>
+            <th>ELO Rating</th>
+            <th>Matches</th>
+            <th>Kills</th>
+            <th>Deaths</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for player in players_data %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td><a href="{% url 'leaderboards:player_profile' player.playfabid %}">{{ player.common_name }}</a></td>
+            <td>{{ player.elo_rating }}</td>
+            <td>{{ player.matches }}</td>
+            <td>{{ player.kills }}</td>
+            <td>{{ player.deaths }}</td>
+        </tr>
+        {% endfor %}        
+    </tbody>
+</table>
+
+{% endblock %}

@@ -100,6 +100,9 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'leaderboards:player_progress' %}">Meta: Graph Progress(XP)</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'leaderboards:ranked_combat_leaderboard' %}"><b>New: Ranked Combat</b></a>
+                        </li>
                         {% block sidebar %}
                         {% for item in leaderboards %}
                         {% if item.category == 'category' %}
