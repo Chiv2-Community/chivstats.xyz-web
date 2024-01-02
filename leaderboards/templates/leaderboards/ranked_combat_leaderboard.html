@@ -1,9 +1,70 @@
 {% extends 'leaderboards/base.html' %}
 
 {% block content %}
-<h1>Ranked Combat Leaderboard</h1>
-<p>Leaderboard based on ELO ratings in Ranked Combat.</p>
-<div class="pagination">
+<style>
+    th {
+        cursor: pointer;
+    }
+</style>
+<script>
+    function sortTable(tableId, columnIndex, dataType) {
+        var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+        table = document.getElementById(tableId);
+        switching = true;
+        dir = "asc";
+    
+        while (switching) {
+            switching = false;
+            rows = table.getElementsByTagName("TR");
+    
+            for (i = 1; i < (rows.length - 1); i++) {
+                shouldSwitch = false;
+                x = rows[i].getElementsByTagName("TD")[columnIndex];
+                y = rows[i + 1].getElementsByTagName("TD")[columnIndex];
+    
+                if (dataType === 'numeric') {
+                    if (dir == "asc") {
+                        if (parseFloat(x.innerHTML) > parseFloat(y.innerHTML)) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else if (dir == "desc") {
+                        if (parseFloat(x.innerHTML) < parseFloat(y.innerHTML)) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+                } else {
+                    if (dir == "asc") {
+                        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    } else if (dir == "desc") {
+                        if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (shouldSwitch) {
+                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                switching = true;
+                switchcount++;      
+            } else {
+                if (switchcount == 0 && dir == "asc") {
+                    dir = "desc";
+                    switching = true;
+                }
+            }
+        }
+    }
+    </script>
+    
+    <h1>Duels - Ranked Combat Leaderboard</h1>
+    <p>Leaderboard based on ELO ratings in Ranked Combat Duels.</p>
+    <div class="pagination">
     {% if ranked_players_page.has_previous %}
         <a href="?page=1">First</a>
         <a href="?page={{ ranked_players_page.previous_page_number }}">Previous</a>
@@ -15,15 +76,15 @@
     {% endif %}
 </div>
 
-<table class="table">
+<table class="table" id="rankedCombatTable">
     <thead>
         <tr>
-            <th>Rank</th>
-            <th>Player</th>
-            <th>ELO Rating</th>
-            <th>Matches</th>
-            <th>Kills</th>
-            <th>Deaths</th>
+            <th onclick="sortTable('rankedCombatTable', 0, 'numeric')">Rank <i class="bi bi-arrow-down-up"></i></th>
+            <th onclick="sortTable('rankedCombatTable', 1, 'string')">Player <i class="bi bi-arrow-down-up"></i></th>
+            <th onclick="sortTable('rankedCombatTable', 2, 'numeric')">ELO Rating <i class="bi bi-arrow-down-up"></i></th>
+            <th onclick="sortTable('rankedCombatTable', 3, 'numeric')">Matches <i class="bi bi-arrow-down-up"></i></th>
+            <th onclick="sortTable('rankedCombatTable', 4, 'numeric')">Kills <i class="bi bi-arrow-down-up"></i></th>
+            <th onclick="sortTable('rankedCombatTable', 5, 'numeric')">Deaths <i class="bi bi-arrow-down-up"></i></th>
         </tr>
     </thead>
     <tbody>
