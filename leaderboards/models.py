@@ -32,6 +32,7 @@ class LatestLeaderboard(models.Model):
 class Player(models.Model):
     playfabid = models.CharField(max_length=16, primary_key=True)
     alias_history = JSONField(default=dict)
+    alias_recent = models.CharField(max_length=255, blank=True, null=True)
     badlist = models.BooleanField(default=False)
     badlist_reason = models.CharField(max_length=255, blank=True, null=True)
     badlist_timestamp = models.DateTimeField(blank=True, null=True)

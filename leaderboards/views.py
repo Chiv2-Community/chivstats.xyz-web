@@ -12,8 +12,8 @@ from django.http import Http404, JsonResponse, HttpResponseBadRequest
 from django.shortcuts import redirect, render
 from django.views.decorators.cache import cache_page
 
-from django.db.models import F, Value, IntegerField
-from django.db.models.functions import Coalesce
+from django.db.models import Case, When, Value, FloatField, Window, F, ExpressionWrapper
+from django.db.models.functions import Rank
 
 from rest_framework import generics, status
 from rest_framework.decorators import api_view
@@ -631,6 +631,8 @@ def player_profile(request, playfabid):
                 'total_gold': total_gold, 
             })
 
+    player = Player.objects.get(playfabid=playfabid)
+    alias_recent = player.alias_recent or "No recent alias recorded"
     playtime_data = []
     today = datetime.now().date()
     for i in range(14):
@@ -647,6 +649,37 @@ def player_profile(request, playfabid):
             })
 
     if ranked_player:
+        # Calculate ranks
+        elo_rank = RankedPlayer.objects.annotate(rank=Window(
+            expression=Rank(),
+            order_by=F('elo_rating').desc()
+        )).get(playfabid=playfabid).rank
+
+        kdr_rank = RankedPlayer.objects.annotate(
+            kdr=Case(
+                When(deaths=0, then=None),  # Use None for cases where deaths are zero
+                default=ExpressionWrapper(F('kills') / F('deaths'), output_field=FloatField()),
+                output_field=FloatField()
+            ),
+            rank=Window(
+                expression=Rank(),
+                order_by=F('kdr').desc(nulls_last=True)
+            )
+        ).get(playfabid=playfabid).rank
+
+        matches_rank = RankedPlayer.objects.annotate(rank=Window(
+            expression=Rank(),
+            order_by=F('matches').desc()
+        )).get(playfabid=playfabid).rank
+        deaths_rank = RankedPlayer.objects.annotate(rank=Window(
+            expression=Rank(),
+            order_by=F('kills').desc()
+        )).get(playfabid=playfabid).rank
+        kills_rank = RankedPlayer.objects.annotate(rank=Window(
+            expression=Rank(),
+            order_by=F('deaths').desc()
+        )).get(playfabid=playfabid).rank
+
         ranked_data = {
             'elo_rating': ranked_player.elo_rating,
             'matches': ranked_player.matches,
@@ -654,13 +687,19 @@ def player_profile(request, playfabid):
             'deaths': ranked_player.deaths,
             'discord_username': ranked_player.discord_username,
             'common_name': ranked_player.common_name,
-            'gamename': ranked_player.gamename
+            'gamename': ranked_player.gamename,
+            'elo_rank': elo_rank,
+            'kdr_rank': kdr_rank if kdr_rank is not None else 'N/A',
+            'matches_rank': matches_rank,
+            'kills_rank': kills_rank,
+            'deaths_rank': deaths_rank,            
         }
     else:
         ranked_data = None
 
     context.update({
         'playfabid': playfabid,
+        'alias_recent': alias_recent,
         'player': player,
         'aliases': player.aliases(),
         'leaderboard_data': leaderboard_data,
