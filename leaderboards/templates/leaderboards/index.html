@@ -1,29 +1,222 @@
 {% extends 'leaderboards/base.html' %}
 {% load custom_filters %}
 {% block content %}
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-EQG3BMRF63"></script>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-EQG3BMRF63"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-EQG3BMRF63');
+</script>
+
+<style>
+    .header-section {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start; /* Align items to the start */
+    }
+    .header-image {
+        width: 100px; /* Adjust the width as needed */
+        margin-right: 10px; /* Add some space between the image and the text */
+    }
+    .header-text {
+        margin-left: 20px;
+    }
+    .chart-container {
+        width: 90%; /* Adjusted width for a wider chart */
+        margin: auto;
+    }
+    .tables-container {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 20px;
+    }
+    .table-container {
+        width: 45%; /* Adjust the width of the tables */
+    }
+    .text-success {
+        color: green;
+    }
+    .text-danger {
+        color: red;
+    }
+    .text-secondary {
+        color: gray;
+    }
+</style>
+
+
+<div class="header-section">
+    <img class="header-image" src="https://chivstats.xyz/static/chivstats-castle500.png" alt="ChivStats Castle Logo">
+    <h2 class="header-text">Chivstats.xyz - Chivalry 2 Statistics | XP Leaderboards | Ranked Combat</h2>
+</div>
+
+<!-- Canvas for the line chart -->
+<div class="chart-container">
+    <canvas id="dailyUniqueAccountsGraph"></canvas>
+</div>
+
+    <!-- Here is the script for the line chart, which includes rounding the tooltip -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@0.1.1"></script>
+
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
+        fetch('/leaderboards/api/daily-unique-accounts/')
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('dailyUniqueAccountsGraph').getContext('2d');
+        
+                const labels = data.map(entry => moment.utc(entry.timestamp_hour).local().format('MMM D, YYYY'));
+                const playerCounts = data.map(entry => entry.player_count !== 0 ? entry.player_count : null);
+                const averageHourlyCounts = playerCounts.map(count => count !== null ? Math.round(count / 24) : null); // Round here for the dataset
     
-      gtag('config', 'G-EQG3BMRF63');
+                const chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Daily Unique Player Count',
+                            data: playerCounts,
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                            fill: false,
+                            stepped: true,
+                            tension: 0,
+                            spanGaps: true
+                        }, {
+                            label: 'Average Hourly Player Count',
+                            data: averageHourlyCounts,
+                            borderColor: 'rgba(255, 159, 64, 1)',
+                            fill: false,
+                            tension: 0.4,
+                            spanGaps: true
+                        }]
+                    },
+                    options: {
+                        aspectRatio: 3,
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    unit: 'day',
+                                    tooltipFormat: 'MMM D, YYYY',
+                                    // Ensure all labels are displayed
+                                    autoSkip: false
+                                },
+                                distribution: 'linear'
+                            },
+                            y: {
+                                beginAtZero: true
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            },
+                            // Add tooltip callback for rounding
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.dataset.label || '';
+    
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        // Check if this is the dataset for average hourly player count
+                                        if (context.datasetIndex === 1) { // Assuming this is the index for the average
+                                            label += Math.round(context.parsed.y);
+                                        } else {
+                                            label += context.parsed.y;
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        },
+                        interaction: {
+                            mode: 'nearest',
+                            axis: 'x',
+                            intersect: false
+                        }
+                    }
+                });
+            });
     </script>
+
+<div class="tables-container">
+    <!-- First table container for the last 14 days of player counts -->
+    <div class="table-container">
+        <h3>Previous Daily Unique Player Counts</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Unique Accounts Seen</th>
+                    <th>Gain</th>
+                    <th>% Gain</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for entry in last_14_days_data %}
+                <tr>
+                    <td>{{ entry.timestamp_hour | date:"M d, Y" }}</td>
+                    <td>{{ entry.player_count }}</td>
+                    <!-- Add color coding based on gain value -->
+                    <td class="{% if entry.gain > 0 %}text-success{% elif entry.gain < 0 %}text-danger{% else %}text-secondary{% endif %}">
+                        {{ entry.gain }}
+                    </td>
+                    <!-- Round the percent gain to two decimal places and add color coding -->
+                    <td class="{% if entry.percent_gain > 0 %}text-success{% elif entry.percent_gain < 0 %}text-danger{% else %}text-secondary{% endif %}">
+                        {{ entry.percent_gain|floatformat:2 }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Second table container for recent ranked combat statistics -->
+    <div class="table-container">
+        <h3>Recent Ranked Combat Statistics</h3>
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Registered Players</th>
+                    <th>Total Matches</th>
+                    <th>ELO Changed Hands</th>
+                    <th>Currency Won</th>
+                </tr>
+            </thead>
+            <tbody>
+                SOON
+                <!-- Sample data -->
+                {% for date in sample_dates %}
+                <tr>
+                    <td>{{ date }}</td>
+                    <td>Sample Data</td>
+                    <td>Sample Data</td>
+                    <td>Sample Data</td>
+                    <td>Sample Data</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <div class="text-start">
-    <img src="https://chivstats.xyz/static/chivstats-castle500.png"><br>
-    <h2> Chivalry 2 Statistics & Leaderboards</h2>
+    <h2> Chivalry 2 Statistics, XP rankings, and Ranked Combat ELO</h2>
     <p>
-        <br>
-        Most Recent Update: Daily Automated, See leaderboard timestamps.<br>
-        All Time Chivalry 2 Unique Players: {{ latest_entry.unique_players|format_with_commas }}<br>
-        Recent Daily Max Total Players: {{ latest_entry.daily_players|format_with_commas }}<br>                  
         <br>
         This site presents player statistics derived from official Chivalry 2 server sources. The gathering process is
         time-consuming and updates are done in batches. Please note that the available data is limited and certain
-        restrictions apply. At present, updates are <b>~daily</b> targeted at <b>100,000</b> top players..
+        restrictions apply. At present, updates are <b>~daily</b> targeted at <b>100,000</b> top players.. Ranked combat can be participated in the <a href="https://discord.gg/jointg">Tournament Grounds</a> or any participating chivbot enabled discord with the #chivstats-ranked channel.
+        <br>All data may have a 10 minute cache.
         <br><br>
-        Assistance with the web frontend and the creation of an aesthetically pleasing UI would be appreciated. The frontend is open source and available on <a href="https://github.com/Chiv2-Community/chivstats.xyz-web/">github(Chiv2-Community/chivstats.xyz-web)</a>.
+        The frontend is open source and available on <a href="https://github.com/Chiv2-Community/chivstats.xyz-web/">Unchained Community github</a>(Chiv2-Community/chivstats.xyz-web).
         <br><br>
         - Gimmic
         <br><br><br>

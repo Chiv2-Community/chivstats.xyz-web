@@ -64,7 +64,7 @@ p.card-text {
     <div class="card mb-3">
         <div class="card-body">
             <h2 class="card-title">Ranked Player Details</h2>
-            <p class="card-text">ELO Rating: {{ ranked_data.elo_rating }} (#{{ ranked_data.elo_rank }})</p>
+            <p class="card-text">Duels ELO Rating: {{ ranked_data.elo_rating }} (#{{ ranked_data.elo_rank }})</p>
             <p class="card-text">Matches: {{ ranked_data.matches }} (#{{ ranked_data.matches_rank }})</p>
             <p class="card-text">KDR: #{% if ranked_data.kdr_rank != 'N/A' %}{{ ranked_data.kdr_rank }}{% else %}N/A{% endif %}</p>
             <p class="card-text">Kills: {{ ranked_data.kills }} (#{{ ranked_data.kills_rank }})</p>

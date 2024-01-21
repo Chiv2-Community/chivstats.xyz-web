@@ -74,16 +74,16 @@
                 <div class="sidebar-sticky pt-3">
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'leaderboards:index' %}">Home</a>
+                            <a class="nav-link" href="{% url 'leaderboards:index' %}"><b>Home</b></a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="https://discord.gg/chiv2unchained">Chivalry Unchained Discord</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'leaderboards:player_search' %}">Player Search</a>
+                            <a class="nav-link" href="{% url 'leaderboards:player_search' %}"><b>Player Search</b></a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'leaderboards:hourly_player_count' %}">Hourly Player Count</a>
+                            <a class="nav-link" href="{% url 'leaderboards:daily_unique_accounts' %}">Player Count Metrics</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'leaderboards:show_games' %}">Server List</a>
@@ -92,10 +92,7 @@
                             <a class="nav-link" href="{% url 'leaderboards:top_gainers_leaderboard' %}">Meta: Top Gainers</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{% url 'leaderboards:wealth_leaderboard' %}"><b>New: Wealth</b></a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'leaderboards:peasant_caps_leaderboard' %}"><b>New: Peasant Caps</b></a>
+                            <a class="nav-link" href="{% url 'leaderboards:peasant_caps_leaderboard' %}">Peasant Caps</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'leaderboards:player_progress' %}">Meta: Graph Progress(XP)</a>

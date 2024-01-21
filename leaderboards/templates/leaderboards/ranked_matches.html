@@ -1,0 +1,28 @@
+{% extends 'leaderboards/base.html' %}
+
+{% block content %}
+  <h1>1v1 Duels Match History</h1>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Timestamp</th>
+        <th>Winner</th>
+        <th>Winner Score</th>
+        <th>Loser</th>
+        <th>Loser Score</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for match in match_history_data %}
+        <tr>
+          <td>{{ match.timestamp }}</td>
+          <td><a href="{{ match.winner_url }}">{{ match.winner_name }}</a></td>
+          <td>{{ match.winner_score }}</td>
+          <td><a href="{{ match.loser_url }}">{{ match.loser_name }}</a></td>
+          <td>{{ match.loser_score }}</td>
+</tr>
+{% endfor %}
+</tbody>
+
+  </table>
+{% endblock %}

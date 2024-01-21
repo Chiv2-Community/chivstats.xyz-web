@@ -22,7 +22,8 @@ from rest_framework.response import Response
 
 from leaderboards import models
 from .models import (
-    Leaderboard, Player, PlaytimeEx, GlobalXp, HourlyPlayerCount, ChivstatsSumstats, DailyPlaytime, leaderboard_classes, LatestLeaderboard, RankedPlayer)
+    Leaderboard, Player, PlaytimeEx, GlobalXp, HourlyPlayerCount, ChivstatsSumstats, DailyPlaytime, leaderboard_classes, LatestLeaderboard, RankedPlayer,
+    DuoTeam, Duel)
 from .serializers import (LatestLeaderboardSerializer, PlayerSerializer)
 from .serializers import LeaderboardSerializer
 from .utils import (humanize_leaderboard_name, organize_sidebar, create_leaderboard_list, read_yaml_news, to_json, get_level_data)
@@ -67,6 +68,12 @@ def peasant_caps_leaderboard(request):
 
 from django.core.paginator import Paginator
 
+
+def about_elo(request):
+    # Add any dynamic content to the context as needed, for now it's empty.
+    context = {}
+    return render(request, 'leaderboards/about_elo.html', context)
+
 def wealth_leaderboard(request):
     wealth_type = request.GET.get('wealth_type', 'gold')  # Default to 'gold' if not specified
     page = request.GET.get('page', 1)
@@ -95,7 +102,7 @@ def wealth_leaderboard(request):
 
 def ranked_combat_leaderboard(request):
     page = request.GET.get('page', 1)
-    ranked_players_list = RankedPlayer.objects.all().order_by('-elo_rating')
+    ranked_players_list = RankedPlayer.objects.all().order_by('-elo_duelsx')  # Updated field name here
     
     # Debugging: Check if the query set returns any results
     print('Ranked Players List:', ranked_players_list)
@@ -114,20 +121,47 @@ def ranked_combat_leaderboard(request):
         # Determine the display name using the order of precedence you've given
         display_name = ranked_player.gamename or ranked_player.common_name or (player.most_common_alias() if player else None)
         
-        # Append the player data with the chosen display name
+        # Round the elo_duelsx value to the nearest whole number
+        elo_rating_rounded = round(ranked_player.elo_duelsx)
+        
+        # Append the player data with the chosen display name and the rounded ELO rating
         players_data.append({
             'playfabid': ranked_player.playfabid,
             'common_name': display_name,
-            'elo_rating': ranked_player.elo_rating,
+            'elo_rating': elo_rating_rounded,  # Use the rounded value here
             'matches': ranked_player.matches,
             'kills': ranked_player.kills,
             'deaths': ranked_player.deaths
         })
 
-    # Debugging: Check if players_data is filled
-    print('Players Data:', players_data)
+    # New code for fetching and processing DuoTeam data
+    duo_teams_list = DuoTeam.objects.filter(retired=False).order_by('-elo_rating')  # Adjust the filter and order as needed
+    duo_paginator = Paginator(duo_teams_list, 10)  # Adjust the number per page as needed
+    page_duo = request.GET.get('page_duo', 1)
+    duo_teams_page = duo_paginator.get_page(page_duo)
+
+    duo_teams_data = []
+    for team in duo_teams_page:
+        try:
+            player1 = RankedPlayer.objects.get(playfabid=team.player1_id)
+            player2 = RankedPlayer.objects.get(playfabid=team.player2_id)
+            team_data = {
+                'team_name': team.team_name or f"{player1.common_name} & {player2.common_name}",
+                'elo_rating': team.elo_rating,
+                'matches_played': team.matches_played,
+                'player1_name': player1.common_name,
+                'player2_name': player2.common_name
+            }
+            duo_teams_data.append(team_data)
+        except RankedPlayer.DoesNotExist:
+            # Handle the case where one of the players does not exist
+            # For example, skip this team or add a placeholder
+            continue
+
 
     context = {
+        'duo_teams_data': duo_teams_data,
+        'duo_teams_page': duo_teams_page,
         'players_data': players_data,  # Make sure this matches the template variable
         'ranked_players_page': ranked_players_page,  # Add this to the context
         'leaderboards': leaderboard_list_of_dict,
@@ -135,6 +169,38 @@ def ranked_combat_leaderboard(request):
 
     return render(request, 'leaderboards/ranked_combat_leaderboard.html', context)
 
+def ranked_matches(request):
+    # Fetch the match history data from the 'duels' table
+    match_history_data = Duel.objects.all().order_by('-timestamp')  # Adjust the query as needed
+
+    # Fetching player details for winners and losers
+    playfabids = list(set([match.winner_playfabid for match in match_history_data] + 
+                          [match.loser_playfabid for match in match_history_data]))
+    players = Player.objects.filter(playfabid__in=playfabids).in_bulk(field_name='playfabid')
+
+    # Enhancing match data with player names and profile URLs
+    enhanced_match_data = []
+    for match in match_history_data:
+        winner_player = players.get(match.winner_playfabid)
+        loser_player = players.get(match.loser_playfabid)
+
+        enhanced_match = {
+            'timestamp': match.timestamp,
+            'winner_name': winner_player.most_common_alias() if winner_player else match.winner_playfabid,
+            'winner_score': match.winner_score,
+            'loser_name': loser_player.most_common_alias() if loser_player else match.loser_playfabid,
+            'loser_score': match.loser_score,
+            'winner_url': f'/leaderboards/player/{match.winner_playfabid}',
+            'loser_url': f'/leaderboards/player/{match.loser_playfabid}'
+        }
+        enhanced_match_data.append(enhanced_match)
+
+    context = {
+        'match_history_data': enhanced_match_data,
+        'leaderboards': leaderboard_list_of_dict,
+    }
+
+    return render(request, 'leaderboards/ranked_matches.html', context)
 
 
 
@@ -303,6 +369,62 @@ def get_hourly_player_count(request):
     else:
         context = get_leaderboards_context()
         return render(request, 'leaderboards/hourly_graph.html', context)
+
+from django.shortcuts import render
+from .models import HourlyPlayerCount
+from django.db.models import F, Window, ExpressionWrapper, fields, Case, When
+from django.db.models.functions import Lag, ExtractHour
+from django.http import JsonResponse
+from django.db.models import Case, When, Value, IntegerField
+from django.db.models import Window, F
+from django.db.models.functions import Lag, ExtractHour
+from django.db.models.expressions import ExpressionWrapper
+from django.db.models.fields import FloatField
+from django.http import JsonResponse
+from .models import HourlyPlayerCount
+from django.db.models.functions import Round
+
+def get_daily_unique_accounts(request):
+    # Annotate all data with the hour extracted from timestamp_hour
+    all_data_with_hour = HourlyPlayerCount.objects.annotate(
+        hour=ExtractHour('timestamp_hour'),
+    )
+
+    # Annotate with the previous day's player count and the calculated gain
+    data = all_data_with_hour.annotate(
+        previous_day_count=Window(
+            expression=Lag('player_count', default=None),
+            order_by=F('timestamp_hour').asc()
+        ),
+        gain=F('player_count') - F('previous_day_count'),
+    ).annotate(
+        percent_gain=Case(
+            # Calculate percentage gain only when previous_day_count is not zero
+            When(previous_day_count=0, then=Value(None)),
+            default=ExpressionWrapper(
+                F('gain') * 100.0 / F('previous_day_count'),
+                output_field=FloatField()
+            ),
+        )
+    ).filter(hour=23).values(
+        'timestamp_hour', 'player_count', 'gain', 'percent_gain'
+    ).order_by('timestamp_hour')  # Order by ascending to get oldest to newest
+
+    # Get the last 14 days of data for the table, need to retain all values for the line chart above.
+    last_14_days_data = data.order_by('-timestamp_hour')[:14]
+
+    if request.path.endswith('/api/daily-unique-accounts/'):
+        return JsonResponse(list(data), safe=False)
+    else:
+        context = {
+            'all_data': list(data),
+            'last_14_days_data': list(last_14_days_data),
+            # ... include other context data as needed ...
+        }
+        context.update(get_leaderboards_context())
+        return render(request, 'leaderboards/daily_unique_accounts_graph.html', context)
+
+
 
 def tattle(request):
     players = Player.objects.filter(badlist=True)
@@ -505,18 +627,62 @@ def top_gainers_leaderboard(request):
     
     return render(request, 'leaderboards/top_gainers_leaderboard.html', context)
 
+
+from django.shortcuts import render
+from datetime import datetime
+from .models import ChivstatsSumstats, HourlyPlayerCount
+from django.db.models.functions import ExtractHour, Lag
+from django.db.models import Window, F, ExpressionWrapper, fields, Case, When
+from .utils import read_yaml_news  # Assuming you have a utility function to read news
+
 def index(request):
     latest_entry = ChivstatsSumstats.objects.latest('serial_date')
     latest_update = datetime.strptime(str(latest_entry.serial_date), '%Y%m%d')
     news = read_yaml_news()
     news.sort(reverse=True, key=lambda x : x['date'])
+
+    # Fetch data for the daily unique accounts chart and table
+    all_data_with_hour = HourlyPlayerCount.objects.annotate(
+        hour=ExtractHour('timestamp_hour'),
+    )
+
+    # Annotate with the previous day's player count and the calculated gain
+    data = all_data_with_hour.annotate(
+        previous_day_count=Window(
+            expression=Lag('player_count', default=None),
+            order_by=F('timestamp_hour').asc()
+        ),
+        gain=F('player_count') - F('previous_day_count'),
+    ).annotate(
+        percent_gain=Case(
+            # Calculate percentage gain only when previous_day_count is not zero
+            When(previous_day_count=0, then=Value(None)),
+            default=ExpressionWrapper(
+                F('gain') * 100.0 / F('previous_day_count'),
+                output_field=fields.FloatField()
+            ),
+        )
+    ).filter(hour=23).values(
+        'timestamp_hour', 'player_count', 'gain', 'percent_gain'
+    ).order_by('-timestamp_hour')
+
+    # Get the last 14 days of data for the table
+    last_14_days_data = list(data[:14])
+
+    # Pass all the context data to the template
+
+
     context = {
-        'leaderboards': leaderboard_list_of_dict,
+        'leaderboards': leaderboard_list_of_dict,  # This needs to be defined or fetched as well
         'latest_entry': latest_entry,
         'latest_update': latest_update,
-        'news' : news
+        'news': news,
+        'all_data': list(data),
+        'last_14_days_data': last_14_days_data,  # Add this for the table in the template
     }
+
     return render(request, 'leaderboards/index.html', context)
+
 
 def leaderboard(request, leaderboard_name):
     leaderboard_name = leaderboard_name.replace(' ', '')
@@ -652,7 +818,7 @@ def player_profile(request, playfabid):
         # Calculate ranks
         elo_rank = RankedPlayer.objects.annotate(rank=Window(
             expression=Rank(),
-            order_by=F('elo_rating').desc()
+            order_by=F('elo_duelsx').desc()
         )).get(playfabid=playfabid).rank
 
         kdr_rank = RankedPlayer.objects.annotate(
@@ -681,7 +847,7 @@ def player_profile(request, playfabid):
         )).get(playfabid=playfabid).rank
 
         ranked_data = {
-            'elo_rating': ranked_player.elo_rating,
+            'elo_rating': ranked_player.elo_duelsx,
             'matches': ranked_player.matches,
             'kills': ranked_player.kills,
             'deaths': ranked_player.deaths,

@@ -62,8 +62,9 @@
     }
     </script>
     
-    <h1>Duels - Ranked Combat Leaderboard</h1>
-    <p>Leaderboard based on ELO ratings in Ranked Combat Duels.</p>
+    <h1>Ranked Combat Leaderboard</h1>
+    <p>Live Leaderboards based on <a href="{% url 'leaderboards:about_elo' %}">ELO rating</a> results from <a href="https://discord.gg/chiv2unchained" target="_blank" rel="noopener noreferrer">discord</a> Ranked Combat participants.</p>
+    <h2>Duels (1v1)</h2>
     <div class="pagination">
     {% if ranked_players_page.has_previous %}
         <a href="?page=1">First</a>
@@ -100,5 +101,34 @@
         {% endfor %}        
     </tbody>
 </table>
+<br><br>
+<h2>Duos (2v2)</h2>
 
+<table class="table" id="duoTeamsTable">
+    <thead>
+        <tr>
+            <th>Rank</th>
+            <th>Team Name</th>
+            <th>ELO Rating</th>
+            <th>Matches Played</th>
+            <th>Player 1</th>
+            <th>Player 2</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for duo_team in duo_teams_data %}
+        <tr>
+            <td>{{ forloop.counter }}</td>
+            <td>{{ duo_team.team_name }}</td>
+            <td>{{ duo_team.elo_rating }}</td>
+            <td>{{ duo_team.matches_played }}</td>
+            <td>{{ duo_team.player1_name }}</td>
+            <td>{{ duo_team.player2_name }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<br><br>
+<h2>LTS (5v5+)</h2>
+<br><br>
 {% endblock %}

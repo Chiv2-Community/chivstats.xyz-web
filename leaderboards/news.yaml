@@ -1,3 +1,5 @@
+- date: 2024-01-20
+  content: Improvement of daily stats player count graph. Update of main index. General work on Ranked Combat (centralized in the TG discord, or any participating chivbot discord)
 - date: 2024-01-01
   content: Initial creation of <a href="ranked_combat">Ranked Combat</a>, which provides <a href="https://discord.gg/chiv2unchained">discord</a> integration and semi-automated tracking of battles over rank.
 - date: 2023-12-13

@@ -1,0 +1,141 @@
+{% extends "leaderboards/base.html" %}
+
+{% block content %}
+<!-- Additional styles -->
+<style>
+    .text-success {
+        color: green;
+    }
+    
+    .text-danger {
+        color: red;
+    }
+</style>
+
+<!-- Moment.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+
+<!-- Chart.js v2 and its Moment.js adapter -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@0.1.1"></script>
+
+<div style="width: 80%; margin: auto;">
+    <canvas id="dailyUniqueAccountsGraph"></canvas>
+</div>
+
+<script>
+    fetch('/leaderboards/api/daily-unique-accounts/')
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('dailyUniqueAccountsGraph').getContext('2d');
+    
+            const labels = data.map(entry => moment.utc(entry.timestamp_hour).local().format('MMM D, YYYY'));
+            const playerCounts = data.map(entry => entry.player_count !== 0 ? entry.player_count : null);
+            const averageHourlyCounts = playerCounts.map(count => count !== null ? Math.round(count / 24) : null); // Round here for the dataset
+
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Daily Unique Player Count',
+                        data: playerCounts,
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                        fill: false,
+                        stepped: true,
+                        tension: 0,
+                        spanGaps: true
+                    }, {
+                        label: 'Average Hourly Player Count',
+                        data: averageHourlyCounts,
+                        borderColor: 'rgba(255, 159, 64, 1)',
+                        fill: false,
+                        tension: 0.4,
+                        spanGaps: true
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day',
+                                tooltipFormat: 'MMM D, YYYY',
+                                // Ensure all labels are displayed
+                                autoSkip: false
+                            },
+                            distribution: 'linear'
+                        },
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        // Add tooltip callback for rounding
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    // Check if this is the dataset for average hourly player count
+                                    if (context.datasetIndex === 1) { // Assuming this is the index for the average
+                                        label += Math.round(context.parsed.y);
+                                    } else {
+                                        label += context.parsed.y;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
+                }
+            });
+        });
+</script>
+
+<div class="container mt-4">
+    <p>
+        This chart displays the daily unique player count and the average hourly player count. 
+        The count represents the number of accounts that had an increase in playtime.
+    </p>
+    <h3>Last 14 Days of Player Counts</h3>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Unique Accounts with Playtime</th>
+                <th>Gain</th>
+                <th>% Gain</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in last_14_days_data %}
+            <tr>
+                <td>{{ entry.timestamp_hour | date:"M d, Y" }}</td>
+                <td>{{ entry.player_count }}</td>
+                <!-- Add color coding based on gain value -->
+                <td class="{% if entry.gain > 0 %}text-success{% elif entry.gain < 0 %}text-danger{% else %}text-secondary{% endif %}">
+                    {{ entry.gain }}
+                </td>
+                <!-- Round the percent gain to two decimal places and add color coding -->
+                <td class="{% if entry.percent_gain > 0 %}text-success{% elif entry.percent_gain < 0 %}text-danger{% else %}text-secondary{% endif %}">
+                    {{ entry.percent_gain|floatformat:2 }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

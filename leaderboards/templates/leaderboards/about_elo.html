@@ -1,0 +1,82 @@
+{% extends 'leaderboards/base.html' %}
+
+{% block content %}
+<h1>Understanding the ELO System</h1><br>
+
+<section id="elo-system-overview">
+    <h2>ELO System Overview</h2>
+    <p>
+        The ELO rating system is a method for calculating the relative skill levels of players in competitive games. It's a dynamic system that adjusts after each game based on the match's outcome.
+    </p>
+</section>
+
+<section id="tldr-elo-explanation">
+    <h2>TL;DR - The ELO System in Brief</h2>
+    <p>
+        Your ELO score changes after every match, depending on whether you win or lose, and by how much you were expected to win or lose. It's a way to measure your skill level compared to other players, and it keeps changing as you play more games.
+    </p>
+</section>
+
+<section id="how-elo-is-calculated">
+    <h2>How ELO is Calculated</h2>
+    <ol>
+        <li>
+            <strong>Win Expectancy:</strong> Before a match, the system calculates the expected outcome based on the difference in ELO between the players. This sets the stage for any potential ELO changes post-match.
+        </li>
+        <li>
+            <strong>ELO Adjustment:</strong> After the match, your ELO is adjusted. A win against a stronger opponent yields a higher ELO increase than a win against a weaker opponent, and vice versa for losses.
+        </li>
+        <li>
+            <strong>K-Factor:</strong> This is the weight applied to the outcome of a match. A higher K-factor can result in larger swings in your ELO score, reflecting the importance or impact of each game.
+        </li>
+    </ol>
+    <p>
+        In more technical terms, the ELO system uses a logistic distribution curve to predict the expected score. Actual outcomes versus these predictions result in ELO adjustments.
+    </p>
+</section>
+
+<section id="elo-calculation-detail">
+    <h2>Detailed ELO Calculation</h2>
+    <p>For those interested in the exact formula used to calculate ELO in duels, here it is(also, please come help):</p>
+    <div class="elo-formula">
+        <div class="formula">
+            <span>ELO<sub>new</sub> = ELO<sub>current</sub> + K &times; (S<sub>actual</sub> - S<sub>expected</sub>)</span>
+        </div>
+        <div class="variables">
+            <p><strong>Where:</strong></p>
+            <ul>
+                <li><span>ELO<sub>current</sub></span>: Current ELO rating of the player</li>
+                <li><span>K</span>: K-factor, which adjusts the volatility of the ELO (set to 32 in our system)</li>
+                <li><span>S<sub>actual</sub></span>: Actual match outcome (1 for a win, 0 for a loss)</li>
+                <li><span>S<sub>expected</sub></span>: Expected match outcome, calculated as <span>1 / (1 + 10<sup>((ELO<sub>opponent</sub> - ELO<sub>current</sub>) / c))</sup></span></li>
+                <li><span>c</span>: A constant that determines the influence of the ELO difference (set to 400 in our system)</li>
+            </ul>
+        </div>
+    </div>
+    <p>This formula ensures that the ELO rating reflects a player's performance against their opponent, adjusted for the expected difficulty of the match. It's designed to be fair and dynamic, rewarding players for wins, especially against higher-rated opponents, and adjusting expectations based on the player's own rating changes.</p>
+</section>
+
+<section id="establishing-elo">
+    <h2>Establishing ELO</h2>
+    <p>
+        New players start with a default ELO, which is fine-tuned as they play more games. The system adapts to their level of play, ensuring they're matched fairly in future games.
+    </p>
+</section>
+
+<section id="ranked-combat-success">
+    <h2>Ranked Combat Success in ELO</h2>
+    <p>
+        In ranked combat, the focus is on match outcomes over individual performance metrics. Agreed wins or losses based on relative ELO can influence the significance of a match's result. Systems of bonus points for wins or decay for inactivity may be applied to promote consistent engagement and fair play.
+    </p>
+</section>
+
+<section id="impact-of-kills-and-deaths">
+    <h2>Impact of Kills and Deaths</h2>
+    <p>
+        Kills and deaths are significant for personal stats and other rankings but do not directly affect the ELO score. It's the match result that counts, emphasizing the importance of strategic gameplay and the ultimate goal of victory.
+        <br>
+        <em>To the victor go the spoils.</em><br><br>
+    </p>
+</section>
+
+{% endblock %}

@@ -109,6 +109,21 @@ for class_name in leaderboard_classes:
     serializer_class = type(f"{class_name}Serializer", (serializers.ModelSerializer,), {'Meta': serializer_meta_class})
     globals()[f"{class_name}Serializer"] = serializer_class
 
+class Duel(models.Model):
+    timestamp = models.DateTimeField(auto_now_add=True)
+    submitting_playfabid = models.CharField(max_length=255)
+    winner_playfabid = models.CharField(max_length=255)
+    winner_score = models.IntegerField()
+    winner_elo = models.DecimalField(max_digits=10, decimal_places=2)
+    loser_playfabid = models.CharField(max_length=255)
+    loser_score = models.IntegerField()
+    loser_elo = models.DecimalField(max_digits=10, decimal_places=2)
+
+    class Meta:
+        ordering = ['-timestamp']  # Order by timestamp in descending order
+        db_table = 'duels'
+
+
 class RankedPlayer(models.Model):
     player_id = models.IntegerField(unique=True)
     elo_rating = models.BigIntegerField(default=1500)
@@ -116,10 +131,34 @@ class RankedPlayer(models.Model):
     kills = models.IntegerField(default=0)
     deaths = models.IntegerField(default=0)
     common_name = models.CharField(max_length=255, blank=True)
-    playfabid = models.CharField(max_length=255, blank=True)
+    playfabid = models.CharField(max_length=255, unique=True, blank=True)
     discordid = models.BigIntegerField(blank=True, null=True)
     matches = models.IntegerField(default=0)
     gamename = models.CharField(max_length=255, blank=True)
+    elo_duelsx = models.BigIntegerField(default=1500)
 
     class Meta:
         db_table = 'ranked_players'
+
+class DuoTeam(models.Model):
+    team_creation = models.DateTimeField(auto_now_add=True)
+    last_activity = models.DateTimeField(auto_now=True)
+    player1 = models.ForeignKey(
+        'RankedPlayer', 
+        on_delete=models.CASCADE, 
+        related_name='duo_team_player1',
+        to_field='playfabid'
+    )
+    player2 = models.ForeignKey(
+        'RankedPlayer', 
+        on_delete=models.CASCADE, 
+        related_name='duo_team_player2',
+        to_field='playfabid'
+    )
+    elo_rating = models.BigIntegerField(default=1500)
+    matches_played = models.IntegerField(default=0)
+    team_name = models.CharField(max_length=255, blank=True)
+    retired = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'duo_teams'
