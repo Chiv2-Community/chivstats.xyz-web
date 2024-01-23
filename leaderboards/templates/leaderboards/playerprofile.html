@@ -1,46 +1,6 @@
 {% extends 'leaderboards/base.html' %}
 
 {% block content %}
-<style>
-    .card-text + .card-text {
-        margin-top: 0.25rem; /* Adjust the space between paragraphs */
-    }
-    .card-text {
-        line-height: 1.25; /* Adjust line height to suit your needs */
-    }
-    /* Tighten up the spacing for card-text elements */
-.card-text + .card-text, .card-text + p, .card-text + ul, p + ul {
-    margin-top: 0.25rem; /* Adjust the space between text and list */
-}
-
-/* Reduce the bottom margin for list items */
-ul li {
-    margin-bottom: 0.25rem; /* Adjust the space between list items */
-}
-
-/* Optional: Adjust the padding inside the card-body for overall tighter spacing */
-.card-body {
-    padding: 1rem; /* Adjust the padding as needed */
-}
-.card-text + .card-text, .card-text + p, .card-text + ul, p + ul {
-    margin-top: 0.25rem;
-}
-ul li {
-    margin-bottom: 0.25rem;
-}
-.card-body {
-    padding: 1rem;
-}
-
-/* New styles to tighten the gap between Name History and list items */
-.card-text + ul, p + ul {
-    margin-top: 0; /* Remove the top margin of the list */
-}
-/* Reduce the bottom margin of the paragraph before the list */
-p.card-text {
-    margin-bottom: 0.25rem;
-}
-    </style>
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 
 <div class="container mt-4">

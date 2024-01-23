@@ -44,7 +44,9 @@
             --sidebar-bg-color: #202124; /* Dark background for sidebar in dark mode */
             --sidebar-text-color: #E0E0E0; /* Light text for dark sidebar */
         }
-    
+        .container {
+            background-color: var(--background-color); /* This will make sure the container's background is consistent with the theme */
+        }
         /* General styles */
         body, .modal-content {
             background-color: var(--background-color);
@@ -123,6 +125,37 @@
         .table thead th {
             cursor: pointer;
             /* You can add other styles for thead here */
+        }
+        /* Card text styles, now respecting light/dark mode */
+        .card-text {
+            line-height: 1.25; /* Adjust line height to suit your needs */
+            color: var(--text-color); /* Use CSS variable for text color */
+        }
+        body.dark-mode main {
+        background-color: var(--background-color); /* This will apply the dark mode background color */
+        color: var(--text-color); /* And the text color for dark mode */
+        }
+        /* Tighten up the spacing for card-text elements */
+        .card-text + .card-text,
+        .card-text + p,
+        .card-text + ul,
+        p + ul {
+            margin-top: 0.25rem; /* Adjust the space between text and list */
+        }
+        .card {
+        background-color: var(--background-color); /* Use the CSS variable */
+        color: var(--text-color); /* Text color for the content */
+        }
+        /* Reduce the bottom margin for list items */
+        ul li {
+            margin-bottom: 0.25rem; /* Adjust the space between list items */
+        }
+
+        /* Optional: Adjust the padding inside the card-body for overall tighter spacing */
+        .card-body {
+            padding: 1rem; /* Adjust the padding as needed */
+            background-color: var(--background-color); /* Use CSS variable for background color */
+            border: 1px solid var(--table-border-color); /* Use CSS variable for border color */
         }
 
         /* Make sure to use CSS variables for consistent theming */
