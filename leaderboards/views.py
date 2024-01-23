@@ -634,6 +634,10 @@ from .models import ChivstatsSumstats, HourlyPlayerCount
 from django.db.models.functions import ExtractHour, Lag
 from django.db.models import Window, F, ExpressionWrapper, fields, Case, When
 from .utils import read_yaml_news  # Assuming you have a utility function to read news
+from django.db.models import Sum, Count
+from django.db.models.functions import TruncDay
+from django.utils.timezone import now
+from datetime import timedelta
 
 def index(request):
     latest_entry = ChivstatsSumstats.objects.latest('serial_date')
@@ -669,7 +673,25 @@ def index(request):
     # Get the last 14 days of data for the table
     last_14_days_data = list(data[:14])
 
-    # Pass all the context data to the template
+    duels_last_14_days = Duel.objects.filter(
+        timestamp__gte=now() - timedelta(days=14)
+    ).annotate(
+        day=TruncDay('timestamp')
+    ).values('day').annotate(
+        total_duels=Count('id'),
+        total_kills=Sum(Case(
+            When(winner_score__isnull=False, then='winner_score'),
+            default=Value(0)
+        )) + Sum(Case(
+            When(loser_score__isnull=False, then='loser_score'),
+            default=Value(0)
+        )),
+        registered_players=Count('winner_playfabid', distinct=True) +
+                            Count('loser_playfabid', distinct=True)
+    ).order_by('-day')
+
+    # Convert QuerySet to list of dicts
+    ranked_combat_stats = list(duels_last_14_days)
 
 
     context = {
@@ -678,6 +700,7 @@ def index(request):
         'latest_update': latest_update,
         'news': news,
         'all_data': list(data),
+        'ranked_combat_stats': ranked_combat_stats,
         'last_14_days_data': last_14_days_data,  # Add this for the table in the template
     }
 
@@ -895,6 +918,7 @@ def top_players_by_playtime(request):
         'players': player_data,
     }
     return render(request, 'leaderboards/top_players.html', context)
+
 def go_touch_grass_leaderboard(request):
     leaderboard_name = 'meta_averagedailyplaytime'
     search_query = request.GET.get('search_query', '')

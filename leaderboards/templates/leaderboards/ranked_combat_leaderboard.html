@@ -1,11 +1,6 @@
 {% extends 'leaderboards/base.html' %}
 
 {% block content %}
-<style>
-    th {
-        cursor: pointer;
-    }
-</style>
 <script>
     function sortTable(tableId, columnIndex, dataType) {
         var table, rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
@@ -77,7 +72,7 @@
     {% endif %}
 </div>
 
-<table class="table" id="rankedCombatTable">
+<table class="table table-striped" id="rankedCombatTable">
     <thead>
         <tr>
             <th onclick="sortTable('rankedCombatTable', 0, 'numeric')">Rank <i class="bi bi-arrow-down-up"></i></th>
@@ -104,7 +99,7 @@
 <br><br>
 <h2>Duos (2v2)</h2>
 
-<table class="table" id="duoTeamsTable">
+<table class="table table-striped" id="duoTeamsTable">
     <thead>
         <tr>
             <th>Rank</th>

@@ -1,2 +1,0 @@
-Django==4.2.2
-pinax-templates==2.0.1

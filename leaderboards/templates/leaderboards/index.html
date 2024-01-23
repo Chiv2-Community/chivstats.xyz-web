@@ -10,43 +10,6 @@
   gtag('config', 'G-EQG3BMRF63');
 </script>
 
-<style>
-    .header-section {
-        display: flex;
-        align-items: center;
-        justify-content: flex-start; /* Align items to the start */
-    }
-    .header-image {
-        width: 100px; /* Adjust the width as needed */
-        margin-right: 10px; /* Add some space between the image and the text */
-    }
-    .header-text {
-        margin-left: 20px;
-    }
-    .chart-container {
-        width: 90%; /* Adjusted width for a wider chart */
-        margin: auto;
-    }
-    .tables-container {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 20px;
-    }
-    .table-container {
-        width: 45%; /* Adjust the width of the tables */
-    }
-    .text-success {
-        color: green;
-    }
-    .text-danger {
-        color: red;
-    }
-    .text-secondary {
-        color: gray;
-    }
-</style>
-
-
 <div class="header-section">
     <img class="header-image" src="https://chivstats.xyz/static/chivstats-castle500.png" alt="ChivStats Castle Logo">
     <h2 class="header-text">Chivstats.xyz - Chivalry 2 Statistics | XP Leaderboards | Ranked Combat</h2>
@@ -61,7 +24,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.4/Chart.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@0.1.1"></script>
-
     <script>
         fetch('/leaderboards/api/daily-unique-accounts/')
             .then(response => response.json())
@@ -147,7 +109,7 @@
 
 <div class="tables-container">
     <!-- First table container for the last 14 days of player counts -->
-    <div class="table-container">
+    <div class="table-container unique-player-counts">
         <h3>Previous Daily Unique Player Counts</h3>
         <table class="table table-striped">
             <thead>
@@ -178,34 +140,36 @@
     </div>
 
     <!-- Second table container for recent ranked combat statistics -->
-    <div class="table-container">
+    <div class="table-container ranked-combat-stats">
         <h3>Recent Ranked Combat Statistics</h3>
         <table class="table table-striped">
             <thead>
                 <tr>
                     <th>Date</th>
-                    <th>Registered Players</th>
-                    <th>Total Matches</th>
-                    <th>ELO Changed Hands</th>
+                    <th>Active Combatants</th>
+                    <th>Total Duels(1v1)</th>
+                    <th>Duel Kills</th>
+                    <th>Total Duos(2v2)</th>
+                    <th>Duo Rounds</th>
                     <th>Currency Won</th>
                 </tr>
             </thead>
             <tbody>
-                SOON
-                <!-- Sample data -->
-                {% for date in sample_dates %}
+                {% for stat in ranked_combat_stats %}
                 <tr>
-                    <td>{{ date }}</td>
-                    <td>Sample Data</td>
-                    <td>Sample Data</td>
-                    <td>Sample Data</td>
-                    <td>Sample Data</td>
+                    <td>{{ stat.day|date:"M d, Y" }}</td>
+                    <td>{{ stat.registered_players }}</td>
+                    <td>{{ stat.total_duels }}</td>
+                    <td>{{ stat.total_kills }}</td>
+                    <td>soon</td>
+                    <td>soon</td>
+                    <td>soon</td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-</div>
+</div>    
 
 <div class="text-start">
     <h2> Chivalry 2 Statistics, XP rankings, and Ranked Combat ELO</h2>
