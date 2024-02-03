@@ -1,0 +1,183 @@
+{% extends 'leaderboards/base.html' %}
+{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <title>Weapon XP Ratio Scatter Plot</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div class="chart-header">
+        <h1 class="chart-title">XP Ratio Scatter Plot (top 10k players)</h1>
+        <div class="chart-description">
+            Hunt for outliers! Y Axis = XP, X Axis = time played. click a player ID to go to that profile. This dataset is currently static from 2023-06 to 2024-01-01.
+        </div>
+        <div class="dropdown-wrapper">
+            SELECT LEADERBOARD:
+            <select id="leaderboardSelect" class="leaderboard-dropdown">
+        <option value="experiencearcher_chart_data.json">Archer</option>
+        <option value="experiencefootman_chart_data.json">Footman</option>
+        <option value="experienceknight_chart_data.json">Knight</option>
+        <option value="experiencevanguard_chart_data.json">Vanguard</option>
+        <option value="experienceweaponaxe_chart_data.json">Axe</option>
+        <option value="experienceweaponbastardsword_chart_data.json">Bastard Sword</option>
+        <option value="experienceweaponbattleaxe_chart_data.json">Battle Axe</option>
+        <option value="experienceweaponbow_chart_data.json">Bow</option>
+        <option value="experienceweaponcrossbow_chart_data.json">Crossbow</option>
+        <option value="experienceweaponcudgel_chart_data.json">Cudgel</option>
+        <option value="experienceweapondagger_chart_data.json">Dagger</option>
+        <option value="experienceweapondaneaxe_chart_data.json">Dane Axe</option>
+        <option value="experienceweaponexecutionersaxe_chart_data.json">Executioner's Axe</option>
+        <option value="experienceweaponfalchion_chart_data.json">Falchion</option>
+        <option value="experienceweaponglaive_chart_data.json">Glaive</option>
+        <option value="experienceweapongreatsword_chart_data.json">Greatsword</option>
+        <option value="experienceweaponhalberd_chart_data.json">Halberd</option>
+        <option value="experienceweaponhatchet_chart_data.json">Hatchet</option>
+        <option value="experienceweaponheavycavalrysword_chart_data.json">Heavy Cavalry Sword</option>
+        <option value="experienceweaponheavycrossbow_chart_data.json">Heavy Crossbow</option>
+        <option value="experienceweaponheavymace_chart_data.json">Heavy Mace</option>
+        <option value="experienceweaponheavyshield_chart_data.json">Heavy Shield</option>
+        <option value="experienceweaponhighlandsword_chart_data.json">Highland Sword</option>
+        <option value="experienceweaponjavelin_chart_data.json">Javelin</option>
+        <option value="experienceweaponkatars_chart_data.json">Katars</option>
+        <option value="experienceweaponknife_chart_data.json">Knife</option>
+        <option value="experienceweaponlance_chart_data.json">Lance</option>
+        <option value="experienceweaponlightshield_chart_data.json">Light Shield</option>
+        <option value="experienceweaponmace_chart_data.json">Mace</option>
+        <option value="experienceweaponmaul_chart_data.json">Maul</option>
+        <option value="experienceweaponmediumshield_chart_data.json">Medium Shield</option>
+        <option value="experienceweaponmesser_chart_data.json">Messer</option>
+        <option value="experienceweaponmorningstar_chart_data.json">Morningstar</option>
+        <option value="experienceweapononehandedspear_chart_data.json">One-Handed Spear</option>
+        <option value="experienceweaponpickaxe_chart_data.json">Pickaxe</option>
+        <option value="experienceweaponpoleaxe_chart_data.json">Poleaxe</option>
+        <option value="experienceweaponpolehammer_chart_data.json">Polehammer</option>
+        <option value="experienceweaponquarterstaff_chart_data.json">Quarterstaff</option>
+        <option value="experienceweaponrapier_chart_data.json">Rapier</option>
+        <option value="experienceweaponthrowingaxe_chart_data.json">Throwing Axe</option>
+        <option value="experienceweaponthrowingknife_chart_data.json">Throwing Knife</option>
+        <option value="experienceweaponthrowingmallet_chart_data.json">Throwing Mallet</option>
+        <option value="experienceweapontwohandedhammer_chart_data.json">Two-Handed Hammer</option>
+        <option value="experienceweaponwaraxe_chart_data.json">War Axe</option>
+        <option value="experienceweaponwarbow_chart_data.json">Warbow</option>
+        <option value="experienceweaponwarclub_chart_data.json">War Club</option>
+        <option value="experienceweaponwarhammer_chart_data.json">Warhammer</option>
+    </select>
+</div>
+</div>
+<div class="chart-wrapper">
+<canvas id="scatterChart"></canvas>
+</div>
+<style>
+    .chart-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .chart-title {
+        margin-bottom: 5px;
+    }
+
+    .chart-description {
+        margin-bottom: 10px;
+    }
+
+    .dropdown-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .leaderboard-dropdown {
+        margin-left: 10px;
+    }
+
+    .chart-wrapper {
+        width: 90%;
+        height: 75vh; /* Use 75% of the viewport height */
+        margin: 0 auto;
+    }
+
+    #scatterChart {
+        width: 100%;
+        height: 100%; /* Use full height of the wrapper */
+    }
+</style>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set the default option for the dropdown
+    document.getElementById('leaderboardSelect').value = 'experienceweapongreatsword_chart_data.json';
+
+    // Programmatically trigger the 'change' event for the dropdown
+    const event = new Event('change');
+    document.getElementById('leaderboardSelect').dispatchEvent(event);
+});
+
+document.getElementById('leaderboardSelect').addEventListener('change', function(event) {
+    const selectedFile = event.target.value;
+    if (selectedFile) {
+        // Construct the path to the JSON file
+        const dataPath = `https://chivstats.xyz/static/scatter/${selectedFile}`;
+        
+        // Fetch the new data and update the chart
+        fetch(dataPath)
+            .then(response => response.json())
+            .then(data => {
+                // Assuming 'scatterChart' is already created, you'll need to update its data
+                scatterChart.data = data; // Update the chart data
+                scatterChart.update(); // Re-render the chart with the new data
+            })
+            .catch(error => console.error('Error loading data:', error));
+    }
+});
+
+// Initialize the Chart.js scatter plot with empty data
+const ctx = document.getElementById('scatterChart').getContext('2d');
+const scatterChart = new Chart(ctx, {
+    type: 'scatter',
+    data: { datasets: [] }, // Start with an empty data set
+    options: {
+        scales: {
+            x: {
+                type: 'linear',
+                position: 'bottom',
+                title: {
+                    display: true,
+                    text: 'Total Playtime'
+                }
+            },
+            y: {
+                title: {
+                    display: true,
+                    text: 'Weapon XP'
+                }
+            }
+        },
+        plugins: {
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        // Assuming `playfabid` is in your data for tooltips
+                        return `${context.raw.playfabid}: (${context.raw.x}, ${context.raw.y})`;
+                    }
+                }
+            }
+        },
+        onClick: function(event, elements) {
+            if (elements.length > 0) {
+                const firstElement = elements[0];
+                const dataPoint = this.data.datasets[firstElement.datasetIndex].data[firstElement.index];
+                const playerProfileUrl = `https://chivstats.xyz/leaderboards/player/${dataPoint.playfabid}/`;
+                window.open(playerProfileUrl, '_blank');
+            }
+        }
+    }
+});
+</script>
+
+{% endblock %}

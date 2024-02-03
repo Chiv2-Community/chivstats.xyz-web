@@ -2,7 +2,7 @@ import re, json
 from copy import copy
 from datetime import datetime, timedelta
 from collections import defaultdict
-
+from django.utils.dateformat import DateFormat
 from django.apps import apps
 from django.core.paginator import Paginator
 from django.core.cache import cache
@@ -46,6 +46,13 @@ def calculate_level_and_gold(xp):
         else:
             break
     return level, total_gold
+
+def xp_ratio_scatter(request):
+    context = {
+        'leaderboards': leaderboard_list_of_dict,
+    }
+
+    return render(request, 'leaderboards/xp_ratio_scatter.html', context)
 
 
 def peasant_caps_leaderboard(request):
@@ -170,20 +177,38 @@ def ranked_combat_leaderboard(request):
     return render(request, 'leaderboards/ranked_combat_leaderboard.html', context)
 
 def ranked_matches(request):
-    # Fetch the match history data from the 'duels' table
-    match_history_data = Duel.objects.all().order_by('-timestamp')  # Adjust the query as needed
+    # Fetch top 20 players based on ELO
+    top_players = RankedPlayer.objects.order_by('-elo_duelsx')[:20]
 
-    # Fetching player details for winners and losers
-    playfabids = list(set([match.winner_playfabid for match in match_history_data] + 
-                          [match.loser_playfabid for match in match_history_data]))
+    # Initialize dictionary for ELO histories
+    elo_histories = {}
+
+    # Loop through each top player and fetch their duel history
+    for player in top_players:
+        player_duels = Duel.objects.filter(
+            Q(winner_playfabid=player.playfabid) | Q(loser_playfabid=player.playfabid)
+        ).order_by('timestamp').values('timestamp', 'winner_playfabid', 'winner_elo', 'loser_playfabid', 'loser_elo')
+
+        elo_history = []
+        for duel in player_duels:
+            timestamp_formatted = DateFormat(duel['timestamp']).format('c')  # ISO format
+            if duel['winner_playfabid'] == player.playfabid:
+                elo_history.append({'timestamp': timestamp_formatted, 'elo': duel['winner_elo']})
+            elif duel['loser_playfabid'] == player.playfabid:
+                elo_history.append({'timestamp': timestamp_formatted, 'elo': duel['loser_elo']})
+
+        elo_histories[player.playfabid] = elo_history
+
+    # Prepare match history data
+    match_history_data = Duel.objects.all().order_by('-timestamp')
+    playfabids = set([match.winner_playfabid for match in match_history_data] + 
+                     [match.loser_playfabid for match in match_history_data])
     players = Player.objects.filter(playfabid__in=playfabids).in_bulk(field_name='playfabid')
 
-    # Enhancing match data with player names and profile URLs
     enhanced_match_data = []
     for match in match_history_data:
         winner_player = players.get(match.winner_playfabid)
         loser_player = players.get(match.loser_playfabid)
-
         enhanced_match = {
             'timestamp': match.timestamp,
             'winner_name': winner_player.most_common_alias() if winner_player else match.winner_playfabid,
@@ -195,8 +220,12 @@ def ranked_matches(request):
         }
         enhanced_match_data.append(enhanced_match)
 
+    # Convert elo_histories to JSON
+    elo_histories_json = json.dumps(elo_histories)
+
     context = {
         'match_history_data': enhanced_match_data,
+        'elo_histories_json': elo_histories_json,  # Pass the JSON string
         'leaderboards': leaderboard_list_of_dict,
     }
 

@@ -17,6 +17,9 @@
             </ul>
             <p class="card-text"><strong>Last Seen Playing:</strong> {{ last_seen_serial|date:"F j, Y" }}</p>
             <p class="text-muted"><strong>Playfab ID:</strong> {{ player.playfabid }}</p>
+            <a href="https://discordapp.com/users/961010834253959238" target="_blank" class="btn btn-danger report-btn" role="button">
+                Report player to @chivmail
+            </a>
         </div>
     </div>
 
@@ -187,5 +190,9 @@
         }
     }
 </script>
-
+<style>
+    .report-btn {
+        margin-top: 20px; /* Adjust as needed for spacing */
+    }
+</style>
 {% endblock %}

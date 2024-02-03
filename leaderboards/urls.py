@@ -10,6 +10,7 @@ urlpatterns = [
     path('ranked_combat/', views.ranked_combat_leaderboard, name='ranked_combat_leaderboard'),
     path('ranked_matches/', views.ranked_matches, name='ranked_matches'),
     path('about_elo/', views.about_elo, name='about_elo'),
+    path('xp-ratio-scatter/', views.xp_ratio_scatter, name='xp_ratio_scatter'),
     path('meta_sumstats/', views.get_meta_sumstats, name='meta_sumstats'),
     path('top_players/', views.top_players_by_playtime, name='top_players'),
     path('player_progress/', views.player_progress_over_time, name='player_progress'),

@@ -1,3 +1,5 @@
+- date: 2024-02-03
+  content: Initial creation of <a href="xp-ratio-scatter">XP Scatter Charting<a>. Look for outliers. Added "Report Player" button to player profiles.
 - date: 2024-01-20
   content: Improvement of daily stats player count graph. Update of main index. General work on Ranked Combat (centralized in the TG discord, or any participating chivbot discord)
 - date: 2024-01-01
